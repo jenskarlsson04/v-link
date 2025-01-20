@@ -75,6 +75,7 @@ function Carplay({ command, commandCounter }: CarplayProps) {
 
   const theme = useTheme();
 
+  const [workerState, setWorkerState] = useState<Boolean | null>(false);
   const [dongleState, setDongleState] = useState<Boolean | null>(false);
   const [phoneState, setPhoneState] = useState<Boolean | null>(false);
   const [streamState, setStreamState] = useState<Boolean | null>(false);
@@ -164,11 +165,12 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   }, [renderWorker]);
 
   useEffect(() => {
+    console.log('worker:', workerState)
     console.log('dongle:', dongleState)
     console.log('phone:', phoneState)
     console.log('stream:', streamState)
-    console.log('user:', app.system.carplay.user)
-  }, [dongleState, phoneState, streamState, app.system.carplay.user])
+    //console.log('user:', app.system.carplay.user)
+  }, [dongleState, phoneState, streamState])
   /* V-Link Mod */
 
   // subscribe to worker messages
@@ -178,14 +180,19 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       switch (type) {
         case 'plugged':
           console.log('Worker connected')
+          setWorkerState(true)
+          app.update({ system: { carplay: { ...app.system.carplay, stream: true} } })
           //setDongleState(true)
           //app.update({ system: { carplay: { ...app.system.carplay, dongle: true } } })
           break
         case 'unplugged':
           console.log('Worker disconnected')
+          app.update({ system: { carplay: { ...app.system.carplay, stream: false} } })
+          setWorkerState(false)
+
           //setDongleState(false)
           //setStreamState(false)
-          app.update({ system: { carplay: { ...app.system.carplay, dongle: false } } })
+          //app.update({ system: { carplay: { ...app.system.carplay, dongle: false } } })
           break
         case 'requestBuffer':
           clearRetryTimeout()
@@ -248,15 +255,16 @@ function Carplay({ command, commandCounter }: CarplayProps) {
     async (request: boolean = false) => {
       const device = request ? await requestDevice() : await findDevice()
       if (device) {
-        console.log('Dongle connected')
-        setPhoneState(true)
-        app.update({ system: { carplay: { ...app.system.carplay, phone: true } } })
         carplayWorker.postMessage({ type: 'start', payload: { config } })
+
+        console.log('Phone connected')
+        setPhoneState(true)
+        //app.update({ system: { carplay: { ...app.system.carplay, phone: true } } })
       } else {
-        console.log('Dongle disconnected')
+        console.log('Phone disconnected')
         setPhoneState(false)
-        setStreamState(false)
-        app.update({ system: { carplay: { ...app.system.carplay, phone: false, stream: false, user: false } } })
+        //setStreamState(false)
+        //app.update({ system: { carplay: { ...app.system.carplay, phone: false, stream: false, user: false } } })
 
       }
     },
@@ -266,9 +274,9 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   // usb connect/disconnect handling and device check
   useEffect(() => {
     navigator.usb.onconnect = async () => {
-      console.log('Dongle disconnected')
-      setDongleState(false)
-      app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false } } })
+      console.log('Dongle connected')
+      setDongleState(true)
+      //app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false } } })
       checkDevice()
     }
 
@@ -280,7 +288,7 @@ function Carplay({ command, commandCounter }: CarplayProps) {
         setDongleState(false)
         setPhoneState(false)
         setStreamState(false)
-        app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false } } })
+        app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false} } })
       }
     }
 
@@ -303,7 +311,9 @@ function Carplay({ command, commandCounter }: CarplayProps) {
         onPointerMove={sendTouchEvent}
         onPointerUp={sendTouchEvent}
         onPointerCancel={sendTouchEvent}
-        onPointerOut={sendTouchEvent}>
+        onPointerOut={sendTouchEvent}
+        
+        style={{height: app.system.carplaySize.height, width: app.system.carplaySize.width}}>
 
         <canvas
           ref={canvasRef}

@@ -60,11 +60,11 @@ export const Socket = () => {
 
   /* Initialize App */
   useEffect(() => {
-    console.log("checking for modules");
+    //console.log("checking for modules");
 
     // When loadedModules matches totalModules, all modules have been initialized
     if (loadedModules === totalModules) {
-      console.log("modules loaded");
+      //console.log("modules loaded");
       store['app'].update({ modules: modules });
       store['app'].update({ system: { startedUp: true } });
       store['app'].update({ system: { view: store['app'].settings.general.startPage.value}})
@@ -88,7 +88,7 @@ export const Socket = () => {
     // Handles state updates for each module
     const handleState = (module) => (data) => {
       store['app'].update({ system: { [module + "State"]: data } });
-      console.log("handling state, ", module, data);
+      //console.log("handling state, ", module, data);
     };
 
     // Register state and settings listeners for each module

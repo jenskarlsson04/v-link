@@ -96,7 +96,6 @@ function Dashboard() {
     if (dashBoardRef.current) {
       const rect = dashBoardRef.current.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        console.log('dashboardRect: ', rect)
         app.update({
           system: {
             contentSize: { width: rect.width, height: rect.height },

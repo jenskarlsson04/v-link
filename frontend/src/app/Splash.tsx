@@ -1,49 +1,119 @@
 import { useEffect, useState } from 'react';
+import styled, { css, keyframes } from 'styled-components';
 import { APP } from '../store/Store';
+import { Title } from '../theme/styles/Typography';
+
+
+// Keyframes for fade-out animation
+const fadeOut = keyframes`
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+`;
+
+// Styled-components
+const Container = styled.div`
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  background-color: black;
+
+  /* Conditionally apply the fade-out animation */
+  ${({ fadeOutAnimation, fadeDuration }) =>
+    fadeOutAnimation &&
+    css`
+      animation: ${fadeOut} ${fadeDuration}ms ease-in-out forwards;
+    `}
+
+  transition: none;
+  transform-origin: top;
+`;
+
+const Splash = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+  color: #DBDBDB;
+  transform-origin: top;
+
+  svg {
+    margin-bottom: 1rem;
+  }
+
+  p {
+    margin: 0;
+  }
+`;
 
 const SplashScreen = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const app = APP((state) => state)
+  
+  const [showLogo, setShowLogo] = useState(true); // Triggers fade-out animation
+  const [showSplash, setShowSplash] = useState(true); // Determines if the splash screen is displayed
+  const [fadeOutAnimation, setFadeOutAnimation] = useState(false); // Triggers fade-out animation
+  const app = APP((state) => state);
+
+  const displayTime = 2000; // Time before fade-out starts (in ms)
+  const logoTime = 1750; // Time before fade-out starts (in ms)
+  const fadeDuration = 1250; // Duration of the fade-out animation (in ms)
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setShowSplash(false);
-    }, 1000);
+    // Start the fade-out animation after the display time
+    const fadeOutTimeout = setTimeout(() => {
+      setFadeOutAnimation(true);
+    }, displayTime);
 
-    return () => clearTimeout(timeout);
+    const logoTimeOut = setTimeout(() => {
+      setShowLogo(false);
+    }, logoTime);
+
+    // Remove the splash screen after the fade-out animation ends
+    const hideSplashTimeout = setTimeout(() => {
+      setShowSplash(false);
+    }, displayTime + fadeDuration); // display time + fade duration
+
+    // Cleanup timeouts on unmount
+    return () => {
+      clearTimeout(fadeOutTimeout);
+      clearTimeout(hideSplashTimeout);
+    };
   }, []);
 
   return (
     showSplash && (
-      <div className="splash-screen" style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        backgroundColor: 'black',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 9999,
-      }}>
-        <div className="splash-content" style={{
-          textAlign: 'center',
-          color: 'white',
-        }}>
+      <Container fadeOutAnimation={fadeOutAnimation} fadeDuration={fadeDuration}>
 
-          <svg xmlns="http://www.w3.org/2000/svg" width="20vh" height="20vh" style={{ fill: 'white' }}>
-            <use xlinkHref="/assets/svg/moose.svg#moose"></use>
-          </svg>
-          <svg xmlns="http://www.w3.org/2000/svg" width="40vh" height="10vh" style={{ fill: 'white' }}>
-            <use xlinkHref="/assets/svg/vlink.svg#vlink"></use>
-          </svg>
-          <p>v {app.system.version}</p>
+        {showLogo &&
+          <Splash>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20vh" height="20vh" style={{ fill: 'white' }}>
+              <use xlinkHref="/assets/svg/moose.svg#moose"></use>
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="40vh" height="10vh" style={{ fill: 'white' }}>
+              <use xlinkHref="/assets/svg/vlink.svg#vlink"></use>
+            </svg>
+            <p> v{app.system.version }</p>
+          </Splash>
+        }
 
-
-
-        </div>
-      </div>
+      </Container>
     )
   );
 };

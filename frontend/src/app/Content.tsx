@@ -33,17 +33,7 @@ const MainContainer = styled.div`
   //background: '${({ theme }) => `${theme.colors.gradients.gradient1}`}';
 `;
 
-const Static = styled.div`
-  // Used to calculate contentsizes
-  //display: flex;
 
-  height: 100%;
-  width: 100%;
-
-  margin-left: 20px;
-  margin-right: 20px;
-  padding-bottom: 20px;
-`
 
 const Card = styled.div`
   flex: 1;
@@ -96,6 +86,7 @@ const Card = styled.div`
 `;
 
 
+
 const Page = styled.div`
   position: relative;  
   flex: 1;
@@ -137,22 +128,25 @@ const Content = () => {
 
   const app = APP((state) => state);
   const key = KEY((state) => state);
-
   const theme = useTheme();
 
   const cardPadding = 20;
 
-  /* CARPLAY TESTCODE */
+
+
+  /* Testcode */
 
   useEffect(() => {
-    console.log(app.system.carplay)
+    console.log('value change')
+
     const user = app.system.carplay.user
     const phone = app.system.carplay.phone
     const stream = app.system.carplay.stream
+    console.log(user, phone, stream)
 
 
     if (user && stream){
-      console.log('carplay enabled')
+      console.log('carplay enabled?', (user && stream))
       setCarPlay(true)}
     else
       setCarPlay(false)
@@ -160,81 +154,18 @@ const Content = () => {
 
 
 
-
-  /* CARPLAY TESTCODE */
-
-  /* Get content size */
-  const pageRef = useRef(null);
-  const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [contentSize, setContentSize] = useState(null);
-
-  const [mounted, setMounted] = useState(false);
-
-  // Calculate window size
-  useEffect(() => {
-    const handleResize = () => {
-      clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        setWindowSize({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
-      }, 100); // Adjust debounce delay as needed
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      clearTimeout(timerRef.current);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    const calculateSize = () => {
-      if (pageRef.current) {
-        const rect = pageRef.current.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) {
-          app.update({
-            system: {
-              contentSize: { width: rect.width, height: rect.height },
-            },
-          });
-          setMounted(true); // Mark the component as mounted
-        } else {
-          console.warn("Invalid container dimensions during animation:", rect);
-        }
-      }
-    };
-
-    // Trigger calculation after animations
-    const animationTimeout = setTimeout(calculateSize, 500); // Adjust timeout based on your animation duration
-
-    return () => clearTimeout(animationTimeout);
-  }, [windowSize]);
+  /* Get windowSize size */
+  const windowSize = { width: window.innerWidth, height: window.innerHeight };
 
 
 
-
-
-
-
-
-  /* Fading Logic */
+  /* Carplay Logic */
   const fadeLength = 200; //ms
   const collapseLength = 400; //ms
   const [fadeMain, setFadeMain] = useState('fade-in');
   const [fadePage, setFadePage] = useState('fade-in');
   const [currentView, setCurrentView] = useState(app.system.view);
   const [carPlay, setCarPlay] = useState(false);
-
-  useEffect(() => {
-    console.log(app.system.interface)
-
-    app.update({system: { interface: { ...app.system.interface, content: false}}})
-  }, [app.system.view, carPlay])
-
-
-
 
   useEffect(() => {
     if (app.system.view !== currentView) {
@@ -254,13 +185,13 @@ const Content = () => {
     }
   }, [app.system.view, carPlay]);
 
-
-
-
-
-
-
-
+  useEffect(() => {
+    if (carPlay && app.system.view === 'Carplay') {
+      setNavActive(false);
+      setFadePage('fade-out');
+      app.update({system: { interface: { ...app.system.interface, content: false}}})
+    }
+  }, [app.system.view, carPlay])
 
 
 
@@ -278,23 +209,17 @@ const Content = () => {
   }
 
   useEffect(() => {
-    console.log(navActive)
-  }, [navActive])
-
-  useEffect(() => {
-    console.log('view', navActive)
     if (app.system.view === 'Settings') {
       setNavActive(true);
       clearTimeout(timerRef.current); // Clear the timeout immediately if in Settings
       return;
     }
 
-    // Start a timer to hide the nav bar after 3 seconds when not in 'Settings'
     if (navActive) {
-      timerRef.current = setTimeout(() => setNavActive(false), 3000);
+      timerRef.current = setTimeout(() => setNavActive(false), 4000);
     }
 
-    return () => clearTimeout(timerRef.current); // Clear timeout on cleanup
+    return () => clearTimeout(timerRef.current);
   }, [app.system.view, navActive]);
 
   const handleClick = (event) => {
@@ -305,22 +230,16 @@ const Content = () => {
   // Mouse position check to update isHovering state
   useEffect(() => {
     const handleMouseMove = (event) => {
-      // Check if mouse is in the bottom third of the screen
       setIsHovering(checkMouseY(event.clientY))
     };
-
-    // Attach the mouse move event
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Clean up the event listener when component unmounts
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
     };
   }, []);
 
-  useEffect(() => {
-    console.log('isHovering?', isHovering)
-  }, [isHovering])
+
 
   /* Render Pages */
   const renderView = () => {
@@ -335,6 +254,7 @@ const Content = () => {
   useEffect(() => {
     app.update({ system: { switch: app.settings.app_bindings.switch.value } });
   }, [app.settings.app_bindings.switch]);
+
 
 
   /* Navigation with Keypress */
@@ -355,9 +275,6 @@ const Content = () => {
     if (key.keyStroke === app.system.switch) cycleView();
   }, [key.keyStroke]);
 
-  useEffect(() => {
-    console.log(navActive)
-  }, [navActive])
 
 
   return (
@@ -375,18 +292,11 @@ const Content = () => {
               maxHeight={windowSize.height - app.settings.side_bars.topBarHeight.value - cardPadding}
               minHeight={0}
               collapseLength={(collapseLength / 1000)}
-              ref={pageRef}
             >
               <Page theme={theme}>
 
                 <Fade className={fadePage} fadeLength={(fadeLength / 1000)}>
-
-                  {mounted ? renderView() : <div style={{
-                    width: '100%',
-                    height: '100%',
-                    display: 'flex',
-                    justifyContent: 'center'
-                  }}> Not Mounted </div>}
+                  {renderView()}
                 </Fade>
                 <NavBlocker
                   app={app}

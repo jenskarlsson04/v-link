@@ -26,6 +26,7 @@ const Sidebar = styled.div`
 
   /* Avoid transition conflicts */
   transition: none;
+  overflow: hidden;
 `;
 
 const Menu = styled.div`
@@ -42,12 +43,14 @@ const Menu = styled.div`
 `;
 
 
-const SideBar = ({collapseLength}) => {
+const SideBar = ({ collapseLength }) => {
 
     const app = APP((state) => state)
     const theme = useTheme();
 
-    const [moose, setMoose] = useState(false);
+    const [moose, setMoose] = useState(true);
+
+    const [active, setActive] = useState(false);
 
     const [currentPage, setCurrentPage] = useState(app.system.view)
     const [currentTab, setCurrentTab] = useState(app.system.settingPage)
@@ -63,7 +66,6 @@ const SideBar = ({collapseLength}) => {
     }, [app.system.settingPage])
 
     return (
-
         <Sidebar
             theme={theme}
             app={app}
@@ -119,32 +121,31 @@ const SideBar = ({collapseLength}) => {
                     </div>
                 </Link>
 
-                    <Link onClick={() =>
-                        setMoose(true)
-                        /* 
-                        openModal(
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <h1>You found the Turbo-Button!</h1>
-                                <p>Sadly, it doesn't do anything.</p>
-                            </div>
-                        )
-                        */
-                        }
-                        isActive={moose}
-                        style={{width: theme.icons.medium}}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
-                            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px'}}>
-                                <IconMedium theme={theme} style={{ fill: moose ? theme.colors.medium : 'none' }}>
-                                    <use xlinkHref={`/assets/svg/moose.svg#moose`}></use>
-                                </IconMedium>
-                            </div>
+                <Link onClick={() =>
+                    setMoose(true)
+                    /* 
+                    openModal(
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <h1>You found the Turbo-Button!</h1>
+                            <p>Sadly, it doesn't do anything.</p>
                         </div>
-                        <Caption1 style={{color: theme.colors.light}}> v2.2.1</Caption1>
-                    </Link>
-                    
+                    )
+                    */
+                }
+                    isActive={moose}
+                    style={{ width: theme.icons.medium }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'left' }}>
+                        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+                            <IconMedium theme={theme} style={{ fill: moose ? theme.colors.medium : 'none' }}>
+                                <use xlinkHref={`/assets/svg/moose.svg#moose`}></use>
+                            </IconMedium>
+                        </div>
+                    </div>
+                    <Caption1 style={{ color: theme.colors.light }}> v2.2.1</Caption1>
+                </Link>
+
             </Menu>
         </Sidebar>
-
     );
 };
 

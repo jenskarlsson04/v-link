@@ -25,7 +25,7 @@
     "events": "^3.3.0",
     "file-saver": "^2.0.5",
     "http-proxy-middleware": "^2.0.6",
-    "immer": "^10.0.3",
+    "immer": "^10.1.1",
     "node-carplay": "github:rhysmorgan134/node-CarPlay",
     "pcm-player": "^0.0.16",
     "pcm-ringbuf-player": "github:lrymnd/pcm-ringbuf-player",

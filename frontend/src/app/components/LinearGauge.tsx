@@ -137,10 +137,12 @@ const LinearGauge = () => {
     /* Observe container resizing and update dimensions. */
     useEffect(() => {
         const handleResize = () => {
-            setDimensions({
-                width: containerRef.current.offsetWidth,
-                height: containerRef.current.offsetHeight,
-            });
+            if (containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: containerRef.current.offsetHeight,
+                });
+            }
         };
 
         const resizeObserver = new ResizeObserver(handleResize);

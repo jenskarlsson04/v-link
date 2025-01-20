@@ -86,11 +86,12 @@ const DataBox = (dashPage) => {
     /* Observe container resizing and update dimensions. */
     useEffect(() => {
         const handleResize = () => {
-            console.log("useEffect2: ", containerRef.current.offsetWidth, containerRef.current.offsetHeight)
-            setDimensions({
-                width: containerRef.current.offsetWidth,
-                height: containerRef.current.offsetHeight,
-            });
+            if(containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: containerRef.current.offsetHeight,
+                });
+            }
         };
 
         const resizeObserver = new ResizeObserver(handleResize);

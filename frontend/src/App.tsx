@@ -28,7 +28,7 @@ const AppContainer = styled.div`
 function App() {
   const mmi = MMI((state) => state);
   const key = KEY((state) => state);
-  const app = APP((state) => state)
+  const app = APP((state) => state);
 
   const system = app.system
 
@@ -36,11 +36,9 @@ function App() {
   const [keyCommand, setKeyCommand] = useState('')
 
   useEffect(() => {
-    console.log(system)
     document.addEventListener('keydown', mmiKeyDown)
     return () => {
       document.removeEventListener('keydown', mmiKeyDown)
-      console.log("return")
     }
   }, []);
 
@@ -62,7 +60,6 @@ function App() {
             setKeyCommand(action)
             setCommandCounter(prev => prev + 1)
             if (action === 'selectDown') {
-              console.log('Enter')
               setTimeout(() => {
                 setKeyCommand('selectUp')
                 setCommandCounter(prev => prev + 1)
@@ -79,19 +76,27 @@ function App() {
   const [ready, setReady] = useState(false)
   /* Observe container resizing and update dimensions. */
   useEffect(() => {
-    const handleResize = () => {
-      console.log(containerRef.current.offsetWidth, containerRef.current.offsetHeight)
+    const handleResize = () => { 
+      if( containerRef.current && system.startedUp) {
+      app.update({system : { windowSize: {
+        width: containerRef.current.offsetWidth,
+        height: containerRef.current.offsetHeight
+      }}})
+
       app.update({system : { carplaySize: {
         width: containerRef.current.offsetWidth,
-        height: app.system.carplay.fullscreen ? containerRef.current.offsetHeight : containerRef.current.offsetHeight - 20
+        height: app.system.carplay.fullscreen ?
+        (containerRef.current.offsetHeight) :
+        (containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value)
       }}})
       setReady(true)
+    }
     };
 
     const resizeObserver = new ResizeObserver(handleResize);
     if (containerRef.current) resizeObserver.observe(containerRef.current);
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [system.startedUp]);
 
   return (
     <AppContainer ref={containerRef}>
@@ -102,7 +107,7 @@ function App() {
       {system.startedUp ? (
         <ThemeProvider theme={theme}>
 
-          {<Carplay
+          {ready && <Carplay
             commandCounter={commandCounter}
             command={keyCommand}
           />}

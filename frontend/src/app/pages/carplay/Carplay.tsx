@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import styled, { css, useTheme } from 'styled-components';
 
 import { ToggleSwitch, Select, Input, Button, Link } from '../../../theme/styles/Inputs';
-import { IconSmall, IconMedium, IconExtraLarge } from '../../../theme/styles/Icons';
+import { IconSmall, IconMedium, CustomIcon } from '../../../theme/styles/Icons';
 import { Fade, GlowLarge } from '../../../theme/styles/Effects';
 import { NavBlocker, FlexBox } from '../../../theme/styles/Container'
 import { Typography } from '../../../theme/styles/Typography';
@@ -26,28 +26,41 @@ function Carplay() {
 
     const Body2 = Typography.Body2
 
+    const [isActive, setIsActive] = useState(false)
+    const [isReady, setIsReady] = useState(false)
+
     const onClick = () => {
         console.log(isActive)
-
         app.update({system: { carplay: {...app.system.carplay, user: true }}})
         setIsActive(!isActive)
     };
 
-    const [isActive, setIsActive] = useState(false)
+
+    useEffect(() => {
+        if(app.system.carplay.phone) {
+            setIsReady(true)
+        } else {
+            setIsReady(false)
+        }
+
+    }, [app.system.carplay.phone, isActive])
+
+
 
 
     return (
         <Container>
-                <Body2>CONNECT PHONE OR CLICK TO PAIR DONGLE.</Body2>
-                <Link onClick={() => onClick()} isActive={isActive}>
-                    <FlexBox>
-                        <IconExtraLarge
+                <Body2>CONNECT iPHONE / ANDROID DEVICE</Body2>
+                <Link onClick={() => onClick()} isActive={isActive} style={{width: '150px', alignItems: 'center', justifyContent:'center'}}>
+                        <CustomIcon
+                            size={theme.icons.xlarge}
                             isActive={isActive}
                             theme={theme}
-                            color={isActive ? theme.colors.theme.blue.active : theme.colors.medium}>
+                            stroke={4}
+                            fill={isActive ? (isReady ? theme.colors.theme.blue.active : theme.colors.theme.blue.default) : theme.colors.medium}
+                            color={isActive ? (isReady ? theme.colors.theme.blue.active : theme.colors.theme.blue.default) : theme.colors.medium}>
                             <use xlinkHref={`/assets/svg/buttons/link.svg#link`}></use>
-                        </IconExtraLarge>
-                    </FlexBox>
+                        </CustomIcon>
                 </Link>
         </Container>
     );

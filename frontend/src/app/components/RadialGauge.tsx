@@ -71,17 +71,19 @@ export const RadialGauge = ({
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [mainRadius, setMainRadius] = useState(0);
 
-    const padding = 30;
+    const padding = 35;
     const containerRef = useRef(null);
 
     /* Observe container resizing and update dimensions. */
     useEffect(() => {
         const handleResize = () => {
-            setDimensions({
-                width: containerRef.current.offsetWidth,
-                height: containerRef.current.offsetHeight,
-            });
-            setMainRadius((containerRef.current.offsetHeight - (padding * 2)) / 2)
+            if (containerRef.current) {
+                setDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: containerRef.current.offsetHeight,
+                });
+                setMainRadius((containerRef.current.offsetHeight - (padding * 2)) / 2)
+            }
         };
 
         const resizeObserver = new ResizeObserver(handleResize);
@@ -91,12 +93,14 @@ export const RadialGauge = ({
 
 
 
+
+
     // Center of Gauge
     const cx = dimensions.height / 2;
     const cy = dimensions.height / 2;
 
     // Main Arc
-    const arcGap = 60;
+    const arcGap = 90;
     let mainArc = 360 - arcGap
     if (mainArc < 1)
         mainArc = 1
@@ -182,7 +186,7 @@ export const RadialGauge = ({
     const markerCount = 75 // Total number of markers
     const markerStart = 10 // Distance from the center for marker start
     const markerEnd = 25   // Distance from the center for marker end
-    const markerWidth = 3 // Width of the markers
+    const markerWidth = 2 // Width of the markers
 
     // Marker Generation
     const generateMarkers = () => {
