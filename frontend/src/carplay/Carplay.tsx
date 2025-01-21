@@ -152,7 +152,9 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       switch (type) {
         case 'streamStarted':
           //console.log('phone1:', app.system.carplay.phone)
-          app.update({ system: { carplay: { ...app.system.carplay, stream: true } } })
+          app.update((state) => {
+            state.system.carplay.stream = true; // Mutate state using Immer
+          });
           setStreamState(true)
           //console.log('phone2:', app.system.carplay.phone)
 
@@ -165,10 +167,10 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   }, [renderWorker]);
 
   useEffect(() => {
-    console.log('worker:', workerState)
-    console.log('dongle:', dongleState)
-    console.log('phone:', phoneState)
-    console.log('stream:', streamState)
+    //console.log('worker:', workerState)
+    //console.log('dongle:', dongleState)
+    //console.log('phone:', phoneState)
+    //console.log('stream:', streamState)
     //console.log('user:', app.system.carplay.user)
   }, [dongleState, phoneState, streamState])
   /* V-Link Mod */
@@ -181,13 +183,18 @@ function Carplay({ command, commandCounter }: CarplayProps) {
         case 'plugged':
           console.log('Worker connected')
           setWorkerState(true)
-          app.update({ system: { carplay: { ...app.system.carplay, stream: true} } })
+          app.update((state) => {
+            state.system.carplay.stream = true; // Mutate state using Immer
+          });          
           //setDongleState(true)
           //app.update({ system: { carplay: { ...app.system.carplay, dongle: true } } })
           break
         case 'unplugged':
           console.log('Worker disconnected')
-          app.update({ system: { carplay: { ...app.system.carplay, stream: false} } })
+          app.update((state) => {
+            state.system.carplay.stream = false; // Mutate state using Immer
+            state.system.carplay.user = false;
+          });
           setWorkerState(false)
 
           //setDongleState(false)
@@ -217,7 +224,9 @@ function Carplay({ command, commandCounter }: CarplayProps) {
               stopRecording()
               break
             case CommandMapping.requestHostUI:
-              app.update({ system: { ...app.system, view: "Dashboard" } })
+              app.update((state) => {
+                state.system.view = 'Dashboard'; // Mutate state using Immer
+              });
           }
           break
         case 'failure':
@@ -259,13 +268,17 @@ function Carplay({ command, commandCounter }: CarplayProps) {
 
         console.log('Phone connected')
         setPhoneState(true)
-        //app.update({ system: { carplay: { ...app.system.carplay, phone: true } } })
+
+        app.update((state) => {
+          state.system.carplay.phone = true; // Mutate state using Immer
+        });
       } else {
         console.log('Phone disconnected')
         setPhoneState(false)
         //setStreamState(false)
-        //app.update({ system: { carplay: { ...app.system.carplay, phone: false, stream: false, user: false } } })
-
+        app.update((state) => {
+          state.system.carplay.phone = false; // Mutate state using Immer
+        });
       }
     },
     [carplayWorker]
@@ -276,7 +289,10 @@ function Carplay({ command, commandCounter }: CarplayProps) {
     navigator.usb.onconnect = async () => {
       console.log('Dongle connected')
       setDongleState(true)
-      //app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false } } })
+      
+      app.update((state) => {
+        state.system.carplay.dongle = true; // Mutate state using Immer
+      });
       checkDevice()
     }
 
@@ -288,7 +304,15 @@ function Carplay({ command, commandCounter }: CarplayProps) {
         setDongleState(false)
         setPhoneState(false)
         setStreamState(false)
-        app.update({ system: { carplay: { ...app.system.carplay, dongle: false, phone: false, stream: false, user: false} } })
+
+        app.update((state) => {
+          state.system.carplay.dongle = false;
+          state.system.carplay.phone = false;
+          state.system.carplay.stream = false;
+
+          state.system.carplay.user = false;
+
+        });
       }
     }
 

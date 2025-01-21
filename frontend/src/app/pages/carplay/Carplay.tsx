@@ -31,7 +31,9 @@ function Carplay() {
 
     const onClick = () => {
         console.log(isActive)
-        app.update({system: { carplay: {...app.system.carplay, user: true }}})
+        app.update((state) => {
+            state.system.carplay.user = true; // Mutate state using Immer
+          });
         setIsActive(!isActive)
     };
 

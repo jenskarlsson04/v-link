@@ -73,7 +73,10 @@ const NavBar = ({ isActive, isHovering }) => {
       <Navbar app={app} theme={theme} isActive={isActive}>
         {['Dashboard', 'Carplay', 'Settings'].map((view) => (
           <div className="column" key={view} style={{ position: 'relative' }}>
-            <NavButton onClick={() => app.update({ system: { view } })}>
+            <NavButton onClick={() => {
+              console.log('click, ', view)
+              app.update((state) => {state.system.view = view })
+              }}>
               <IconNav isActive={app.system.view === view}>
                 <use xlinkHref={`/assets/svg/${view.toLowerCase()}.svg#${view.toLowerCase()}`}></use>
               </IconNav>

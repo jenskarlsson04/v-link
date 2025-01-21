@@ -137,16 +137,13 @@ const Content = () => {
   /* Testcode */
 
   useEffect(() => {
-    console.log('value change')
+    //console.log('value change')
 
-    const user = app.system.carplay.user
-    const phone = app.system.carplay.phone
-    const stream = app.system.carplay.stream
-    console.log(user, phone, stream)
+    //console.log(app.system.carplay)
 
 
-    if (user && stream){
-      console.log('carplay enabled?', (user && stream))
+    if (app.system.carplay.user && app.system.carplay.stream){
+      //console.log('carplay enabled?', (true))
       setCarPlay(true)}
     else
       setCarPlay(false)
@@ -175,11 +172,15 @@ const Content = () => {
         setCurrentView(app.system.view); // Switch to the new view
         if (carPlay && app.system.view === 'Carplay') {
           setNavActive(false);
-          app.update({system: { interface: { ...app.system.interface, content: false}}})
+          app.update((state) => {
+            state.system.interface.content = true; // Mutate state using Immer
+          });
           return;
         } else {
           setFadePage('fade-in');
-          app.update({system: { interface: { ...app.system.interface, content: true}}})
+          app.update((state) => {
+            state.system.interface.content = true; // Mutate state using Immer
+          });
         }
       }, fadeLength); // Duration should match the CSS animation time
     }
@@ -189,7 +190,9 @@ const Content = () => {
     if (carPlay && app.system.view === 'Carplay') {
       setNavActive(false);
       setFadePage('fade-out');
-      app.update({system: { interface: { ...app.system.interface, content: false}}})
+      app.update((state) => {
+        state.system.interface.content = false; // Mutate state using Immer
+      });
     }
   }, [app.system.view, carPlay])
 
@@ -252,7 +255,9 @@ const Content = () => {
   };
 
   useEffect(() => {
-    app.update({ system: { switch: app.settings.app_bindings.switch.value } });
+    app.update((state) => {
+      state.system.switch = app.settings.app_bindings.switch.value; // Mutate state using Immer
+    });
   }, [app.settings.app_bindings.switch]);
 
 
@@ -268,7 +273,9 @@ const Content = () => {
       currentIndex++;
     }
 
-    app.update({ system: { view: viewKeys[currentIndex] } });
+    app.update((state) => {
+      state.system.view = viewKeys[currentIndex]; // Mutate state using Immer
+    });
   };
 
   useEffect(() => {

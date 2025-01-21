@@ -45,29 +45,43 @@ export const Socket = () => {
       };
       const textSize = store['app'].settings.general.textSize.value;
       const textScale = multiplier[textSize] ?? 1;
-      store['app'].update({ system: { textScale: textScale } });
+      store['app'].update((state) => {
+        state.system.textScale = textScale;
+      });      
     }
   }, [store['app'].system.initialized, store['app'].settings.general]);
 
   /* Handle Interface Visibility */
   useEffect(() => {
+    // Ensure that the 'interface' object exists before trying to mutate its properties
     if (store['app'].system.phoneState && (store['app'].system.view === 'Carplay') && store.app != null) {
-      store['app'].update({ system: { interface: { navBar: false } } });
+      store['app'].update((state) => {
+        if (state.system.interface) {
+          state.system.interface.navBar = false;
+        }
+      });
     } else {
-      store['app'].update({ system: { interface: { navBar: true, sideBar: true, content: true, carplay: false } } });
+      store['app'].update((state) => {
+        if (state.system.interface) {
+          state.system.interface.navBar = true;
+          state.system.interface.sideBar = true;
+          state.system.interface.content = true;
+          state.system.interface.carplay = false;
+        }
+      });
     }
   }, [store['app'].system.view, store['app'].system.phoneState]);
+  
 
   /* Initialize App */
   useEffect(() => {
-    //console.log("checking for modules");
-
     // When loadedModules matches totalModules, all modules have been initialized
     if (loadedModules === totalModules) {
-      //console.log("modules loaded");
-      store['app'].update({ modules: modules });
-      store['app'].update({ system: { startedUp: true } });
-      store['app'].update({ system: { view: store['app'].settings.general.startPage.value}})
+      store['app'].update((state) => {
+        state.modules = modules;
+        state.system.startedUp = true;
+        state.system.view = state.settings.general.startPage.value;
+      });
     }
   }, [loadedModules]);
 
@@ -82,12 +96,17 @@ export const Socket = () => {
       setLoadedModules(loadedModuleSet.current.size);
       
       // Update the store with the new settings data
-      store[module].update({ settings: data });
+      store[module].update((state) => {
+        state.settings = data;
+      });
+      
     };
 
     // Handles state updates for each module
     const handleState = (module) => (data) => {
-      store['app'].update({ system: { [module + "State"]: data } });
+      store['app'].update((state) => {
+        state.system[`${module}State`] = data;
+      });
       //console.log("handling state, ", module, data);
     };
 

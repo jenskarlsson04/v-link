@@ -78,18 +78,20 @@ function App() {
   useEffect(() => {
     const handleResize = () => { 
       if( containerRef.current && system.startedUp) {
-      app.update({system : { windowSize: {
-        width: containerRef.current.offsetWidth,
-        height: containerRef.current.offsetHeight
-      }}})
 
-      app.update({system : { carplaySize: {
-        width: containerRef.current.offsetWidth,
-        height: app.system.carplay.fullscreen ?
-        (containerRef.current.offsetHeight) :
-        (containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value)
-      }}})
-      setReady(true)
+        const carplayFullscreen = containerRef.current.offsetHeight
+        const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value
+
+        app.update((state) => {
+            state.system.windowSize.width = containerRef.current.offsetWidth;
+            state.system.windowSize.height = containerRef.current.offsetHeight;
+
+            state.system.carplaySize.width = containerRef.current.offsetWidth;
+            state.system.carplaySize.height = (app.system.carplay.fullscreen ? carplayFullscreen : carplayWindowed)
+        });
+
+        setReady(true)
+
     }
     };
 

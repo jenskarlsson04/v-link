@@ -34,11 +34,11 @@ const useSettings = (module) => {
 
   // Access Zustand userSettings state and update function
   const settings = userSettings((state) => state); // Get all settings
-  const updateSetting = userSettings((state) => state.updateSettings); // Get update function
+  const updateModule = userSettings((state) => state.update); // Get update function
 
-  // Check if updateSetting is a function
-  if (typeof updateSetting !== 'function') {
-    console.error(`updateSetting is not a function for module: ${module}`);
+  // Check if updateModule is a function
+  if (typeof updateModule !== 'function') {
+    console.error(`updateModule is not a function for module: ${module}`);
     return { settings: null, saveSetting: () => {} };
   }
 
@@ -68,7 +68,9 @@ const useSettings = (module) => {
 
   // Function to save settings using socket
   const saveSetting = (newData) => {
-    updateSetting(newData); // Call the update function with new data
+    updateModule((state) => {
+      state.settings = newData
+    }); // Call the update function with new data
     socket.emit('saveSetting', newData); // Emit saveSetting event with new data
   };
 
