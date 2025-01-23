@@ -58,7 +58,9 @@ const SideBar = ({ collapseLength }) => {
     /* Switch Tabs */
     const handleTabChange = (tabIndex) => {
         console.log(tabIndex)
-        app.update({ system: { settingPage: tabIndex } });
+        app.update((state) => {
+            state.system.settingPage = tabIndex;
+          });
     };
 
     useEffect(() => {

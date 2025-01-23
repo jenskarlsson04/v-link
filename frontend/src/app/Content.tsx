@@ -19,7 +19,9 @@ const MainContainer = styled.div`
   height: ${({ height }) => `${height}px`};
   width: ${({ width }) => `${width}px`};
 
-  display: ${({ app }) => (app.system.view === 'Carplay' ? 'flex' : 'flex')};
+  pointer-events: ${({ app }) => (app.system.interface.carplay && app.system.view === 'Carplay' ? 'none' : 'auto')};
+
+  display: flex;
   flex-direction: row;
   align-items: flex-end;
   justify-content: flex-start;
@@ -30,14 +32,12 @@ const MainContainer = styled.div`
   padding-right: ${({ app }) => `${app.settings.general.contentPadding.value}px`};
   padding-bottom: ${({ app }) => `${app.settings.general.contentPadding.value}px`};
   background: none;
-  //background: '${({ theme }) => `${theme.colors.gradients.gradient1}`}';
 `;
 
 
 
 const Card = styled.div`
   flex: 1;
-
   display: flex;
   flex-direction: column;
   //align-items: stretch;
@@ -46,12 +46,12 @@ const Card = styled.div`
   overflow: hidden;
 
   /* Apply the animation based on the current view */
-  animation: ${({ theme, currentView, carPlay, minHeight, maxHeight, collapseLength }) => {
-
-    if (currentView === 'Carplay' && carPlay) {
+  animation: ${({ theme, currentView, carplayVisible, minHeight, maxHeight, collapseLength, stream }) => {
+    const delay = stream ? 0 : 2; // Delay in seconds if stream is false
+    if (currentView === 'Carplay' && carplayVisible) {
       return css`
-        ${theme.animations.getVerticalCollapse(minHeight, maxHeight)} ${collapseLength}s ease-in-out forwards,
-        fadeOut ${collapseLength}s ease-in-out forwards;
+        ${theme.animations.getVerticalCollapse(minHeight, maxHeight)} ${collapseLength}s ease-in-out ${delay}s forwards,
+        fadeOut ${collapseLength}s ease-in-out ${delay}s forwards;
         padding: 0;
       `;
     } else {
@@ -132,76 +132,98 @@ const Content = () => {
 
   const cardPadding = 20;
 
-
-
-  /* Testcode */
-
-  useEffect(() => {
-    //console.log('value change')
-
-    //console.log(app.system.carplay)
-
-
-    if (app.system.carplay.user && app.system.carplay.stream){
-      //console.log('carplay enabled?', (true))
-      setCarPlay(true)}
-    else
-      setCarPlay(false)
-  }, [app.system.carplay])
-
-
-
   /* Get windowSize size */
   const windowSize = { width: window.innerWidth, height: window.innerHeight };
-
-
 
   /* Carplay Logic */
   const fadeLength = 200; //ms
   const collapseLength = 400; //ms
-  const [fadeMain, setFadeMain] = useState('fade-in');
   const [fadePage, setFadePage] = useState('fade-in');
   const [currentView, setCurrentView] = useState(app.system.view);
-  const [carPlay, setCarPlay] = useState(false);
 
   useEffect(() => {
-    if (app.system.view !== currentView) {
+    if (app.system.view === 'Carplay' && app.system.interface.carplay) {
+      // Case: Navigating to Carplay with carplayVisible true
+      setFadePage('fade-out'); // Immediately fade out
+      setTimeout(() => {
+        setCurrentView(app.system.view); // Set Carplay view after fade-out
+        setFadePage('hidden'); // Keep content hidden
+        app.update((state) => {
+          state.system.interface.content = false; // Disable content
+          state.system.interface.navBar = false;
+        });
+      }, fadeLength); // Match CSS fade-out duration
+    } else if (app.system.view === currentView && !app.system.interface.carplay) {
+      // Case: app.system.interface.carplay changed to false without view change
+      setFadePage('fade-in'); // Fade-in the content
+      app.update((state) => {
+        state.system.interface.content = true; // Enable content
+        state.system.interface.navBar = true;
+      });
+    } else if (app.system.view !== currentView) {
+      // Case: Switching between views normally
       setFadePage('fade-out'); // Trigger fade-out for the current view
-      
       setTimeout(() => {
         setCurrentView(app.system.view); // Switch to the new view
-        if (carPlay && app.system.view === 'Carplay') {
-          setNavActive(false);
-          app.update((state) => {
-            state.system.interface.content = true; // Mutate state using Immer
-          });
-          return;
-        } else {
-          setFadePage('fade-in');
-          app.update((state) => {
-            state.system.interface.content = true; // Mutate state using Immer
-          });
-        }
-      }, fadeLength); // Duration should match the CSS animation time
+        setFadePage('fade-in'); // Fade-in the new view
+        app.update((state) => {
+          state.system.interface.content = true; // Enable content
+          state.system.interface.navBar = true;
+        });
+      }, fadeLength); // Match CSS fade-out duration
     }
-  }, [app.system.view, carPlay]);
+  }, [app.system.view, app.system.interface.carplay]);
+
+
 
   useEffect(() => {
-    if (carPlay && app.system.view === 'Carplay') {
-      setNavActive(false);
-      setFadePage('fade-out');
+    if (app.system.carplay.connected && app.system.carplay.worker) {
       app.update((state) => {
-        state.system.interface.content = false; // Mutate state using Immer
+        state.system.interface.carplay = true;
       });
     }
-  }, [app.system.view, carPlay])
-
+    else
+      app.update((state) => {
+        state.system.interface.carplay = false;
+      });
+  }, [app.system.carplay])
 
 
   /* NavBar Logic */
   const timerRef = useRef(null); // Store the timer ID
   const [navActive, setNavActive] = useState(true)
   const [isHovering, setIsHovering] = useState(false);
+
+  useEffect(() => {
+    if (app.system.view === 'Settings') {
+      app.update((state) => {
+        state.system.interface.navBar = true;
+      });
+      clearTimeout(timerRef.current);
+      return;
+    }
+
+    if (app.system.interface.navBar) {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        app.update((state) => {
+          state.system.interface.navBar = false;
+        });
+      }, 4000);
+    }
+
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, [app.system.view, app.system.interface.navBar]);
+
+  const handleClick = (event) => {
+    if (app.system.view != 'Settings' && checkMouseY(event.clientY)) {
+      app.update((state) => {
+        state.system.interface.navBar = true;
+      })
+    }
+  };
 
   const checkMouseY = (mouseY) => {
     const deadZone = 85; // Percentage
@@ -210,25 +232,6 @@ const Content = () => {
     else
       return false;
   }
-
-  useEffect(() => {
-    if (app.system.view === 'Settings') {
-      setNavActive(true);
-      clearTimeout(timerRef.current); // Clear the timeout immediately if in Settings
-      return;
-    }
-
-    if (navActive) {
-      timerRef.current = setTimeout(() => setNavActive(false), 4000);
-    }
-
-    return () => clearTimeout(timerRef.current);
-  }, [app.system.view, navActive]);
-
-  const handleClick = (event) => {
-    if (app.system.view != 'Settings')
-      setNavActive(checkMouseY(event.clientY));
-  };
 
   // Mouse position check to update isHovering state
   useEffect(() => {
@@ -256,7 +259,7 @@ const Content = () => {
 
   useEffect(() => {
     app.update((state) => {
-      state.system.switch = app.settings.app_bindings.switch.value; // Mutate state using Immer
+      state.system.switch = app.settings.app_bindings.switch.value;
     });
   }, [app.settings.app_bindings.switch]);
 
@@ -274,7 +277,7 @@ const Content = () => {
     }
 
     app.update((state) => {
-      state.system.view = viewKeys[currentIndex]; // Mutate state using Immer
+      state.system.view = viewKeys[currentIndex];
     });
   };
 
@@ -289,13 +292,14 @@ const Content = () => {
       {app.system.startedUp ? (
         <>
           <TopBar app={app} />
-          <NavBar isActive={navActive} isHovering={isHovering} />
+          <NavBar isActive={app.system.interface.navBar} isHovering={isHovering} />
           <MainContainer app={app} height={windowSize.height} width={windowSize.width} onClick={handleClick}>
             <SideBar collapseLength={collapseLength} />
             <Card
+              stream={app.system.carplay.connected}
               theme={theme}
-              currentView={currentView}
-              carPlay={carPlay}
+              currentView={app.system.view}
+              carplayVisible={app.system.interface.carplay}
               maxHeight={windowSize.height - app.settings.side_bars.topBarHeight.value - cardPadding}
               minHeight={0}
               collapseLength={(collapseLength / 1000)}
@@ -308,7 +312,7 @@ const Content = () => {
                 <NavBlocker
                   app={app}
                   theme={theme}
-                  isActive={navActive}
+                  isActive={app.system.interface.navBar}
                   collapseLength={collapseLength / 1000}
                   minHeight={0}
                   maxHeight={app.settings.side_bars.navBarHeight.value - app.settings.general.contentPadding.value}

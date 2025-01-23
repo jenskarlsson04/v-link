@@ -47,36 +47,15 @@ export const Socket = () => {
       const textScale = multiplier[textSize] ?? 1;
       store['app'].update((state) => {
         state.system.textScale = textScale;
-      });      
+      });
     }
   }, [store['app'].system.initialized, store['app'].settings.general]);
-
-  /* Handle Interface Visibility */
-  useEffect(() => {
-    // Ensure that the 'interface' object exists before trying to mutate its properties
-    if (store['app'].system.phoneState && (store['app'].system.view === 'Carplay') && store.app != null) {
-      store['app'].update((state) => {
-        if (state.system.interface) {
-          state.system.interface.navBar = false;
-        }
-      });
-    } else {
-      store['app'].update((state) => {
-        if (state.system.interface) {
-          state.system.interface.navBar = true;
-          state.system.interface.sideBar = true;
-          state.system.interface.content = true;
-          state.system.interface.carplay = false;
-        }
-      });
-    }
-  }, [store['app'].system.view, store['app'].system.phoneState]);
-  
 
   /* Initialize App */
   useEffect(() => {
     // When loadedModules matches totalModules, all modules have been initialized
     if (loadedModules === totalModules) {
+      console.log('ready')
       store['app'].update((state) => {
         state.modules = modules;
         state.system.startedUp = true;
@@ -88,18 +67,18 @@ export const Socket = () => {
   /* Wait for Settings */
   useEffect(() => {
     // Handles settings update for each module, ensuring each module loads once
-    const handleSettings = (module) => (data) => {      
+    const handleSettings = (module) => (data) => {
       // Add the module to the loaded set
       loadedModuleSet.current.add(module);
 
       // Update the loadedModules state based on the set size, ensuring accurate count
       setLoadedModules(loadedModuleSet.current.size);
-      
+
       // Update the store with the new settings data
       store[module].update((state) => {
         state.settings = data;
       });
-      
+
     };
 
     // Handles state updates for each module

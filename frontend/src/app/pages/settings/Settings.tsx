@@ -106,10 +106,14 @@ const Settings = () => {
 
   const openModal = (content) => {
     // Open the modal with dynamic content
-    app.update({ system: { modal: true } })
+    store['app'].update((state) => {
+      state.system.modal = true;
+    });
     setModalContent(content);
     setIsModalOpen(true);
-    app.update({ system: { modal: false } })
+    store['app'].update((state) => {
+      state.system.modal = false;
+    });
   };
 
   /* Add Settings */
@@ -192,7 +196,9 @@ const Settings = () => {
   // Save Settings
   function saveSettings() {
     setSave(true)
-    app.update({ settings: currentSettings });
+    app.update((state) => {
+      state.settings = currentSettings;
+    });
     appChannel.emit("save", currentSettings);
     appChannel.emit("load");
   }
@@ -385,7 +391,7 @@ const Settings = () => {
       </Modal>
       <ScrollContainer
         className="scroll-container"
-        style={{width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%' }}
         horizontal={false}
         hideScrollbars={true}
         ignoreElements='input, select'
@@ -396,8 +402,6 @@ const Settings = () => {
             {renderSetting("general", currentSettings)}
             {renderSetting("side_bars", currentSettings)}
 
-            <Element>
-            </Element>
             <Element>
               <Caption2>{`CAN ${system.canState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
@@ -483,9 +487,9 @@ const Settings = () => {
         }
 
       </ScrollContainer>
-        <Button theme={theme} onClick={() => { saveSettings() }} isActive={save ? false : true}>
-          {save ? 'All Settings saved.' : 'Save Settings'}
-        </Button>
+      <Button theme={theme} onClick={() => { saveSettings() }} isActive={save ? false : true}>
+        {save ? 'All Settings saved.' : 'Save Settings'}
+      </Button>
     </Container>
   )
 };

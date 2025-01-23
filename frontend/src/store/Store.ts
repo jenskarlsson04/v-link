@@ -135,11 +135,13 @@ const APP = create(
         phone: false,
         stream: false,
         user: false,
+        worker: false,
         fullscreen: false,
+        paired: false,
+        connected: false,
       },
 
       interface: {
-        dashBar: true,
         topBar: true,
         navBar: true,
         sideBar: true,
