@@ -2,25 +2,20 @@ import styled, { css, useTheme } from 'styled-components';
 import hexToRgba from '../../app/helper/HexToRGBA'
 
 export const IconSmall = styled.svg`
+    fill: none;
+    stroke-width: 3px;
     width: ${({ theme }) => theme.icons.small};
     height: ${({ theme }) => theme.icons.small};
-    fill: ${({ isActive, theme }) =>
-        isActive ? theme.colors.theme.blue.active : theme.colors.medium};
-    transition: fill 0.3s ease-in-out;
-    filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.navGlow})` : 'none'};
-    &:hover {
-        fill: ${({ isActive, theme }) =>
-        isActive ? theme.colors.theme.blue.active : theme.colors.theme.blue.default};
-        filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.default})` : 'none'};
-    }
+    stroke: ${({ isActive, theme }) =>
+        isActive ? theme.colors.light : theme.colors.medium};
+    transition: stroke 1s ease-in-out;
 `;
 
 export const IconMedium = styled.svg`
     width: ${({ theme }) => theme.icons.medium};
     height: ${({ theme }) => theme.icons.medium};
     fill: none;
+    stroke-width: 3px;
     stroke: ${({ isActive, theme, color }) =>
         color ? color : isActive ? theme.colors.theme.blue.active : theme.colors.medium};
     transition: fill 0.3s ease-in-out;
@@ -61,15 +56,18 @@ export const IconExtraLarge = styled.svg`
 
 
 export const IconNav = styled.svg`
+stroke-linecap: round;
+    fill: none;
     width: ${({ theme }) => theme.icons.large};
     height: ${({ theme }) => theme.icons.large};
-    fill: ${({ isActive, theme }) =>
+    stroke-width: 3px;
+    stroke: ${({ isActive, theme }) =>
         isActive ? theme.colors.theme.blue.active : theme.colors.medium};
     transition: fill 0.3s ease-in-out;
     filter: ${({ isActive, theme }) =>
         isActive ? `drop-shadow(${theme.colors.theme.blue.navGlow})` : 'none'};
     &:hover {
-        fill: ${({ isActive, theme }) =>
+        stroke: ${({ isActive, theme }) =>
         isActive ? theme.colors.theme.blue.active : theme.colors.theme.blue.default};
         filter: ${({ isActive, theme }) =>
         isActive ? `drop-shadow(${theme.colors.theme.blue.default})` : 'none'};

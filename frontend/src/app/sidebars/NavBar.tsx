@@ -59,18 +59,18 @@ const Blob = styled.div`
     transition: background 0.4s ease-in-out;
 `;
 
-const NavBar = ({ isActive, isHovering }) => {
+const NavBar = ({ isHovering }) => {
   const app = APP((state) => state);
   const theme = useTheme();
 
   return (
     <>
-      <Indicator isActive={isActive}>
+      <Indicator isActive={app.system.interface.navBar}>
         <GlowLarge color={theme.colors.theme.blue.active} opacity={isHovering ? 0.75 : 0}>
-          <Blob theme={theme} isActive={isActive} isHovering={isHovering}/>
+          <Blob theme={theme} isActive={app.system.interface.navBar} isHovering={isHovering}/>
         </GlowLarge>
       </Indicator>
-      <Navbar app={app} theme={theme} isActive={isActive}>
+      <Navbar app={app} theme={theme} isActive={app.system.interface.navBar}>
         {['Dashboard', 'Carplay', 'Settings'].map((view) => (
           <div className="column" key={view} style={{ position: 'relative' }}>
             <NavButton onClick={() => {
@@ -78,7 +78,7 @@ const NavBar = ({ isActive, isHovering }) => {
               app.update((state) => {state.system.view = view })
               }}>
               <IconNav isActive={app.system.view === view}>
-                <use xlinkHref={`/assets/svg/${view.toLowerCase()}.svg#${view.toLowerCase()}`}></use>
+                <use xlinkHref={`/assets/svg/buttons/${view.toLowerCase()}.svg#${view.toLowerCase()}`}></use>
               </IconNav>
             </NavButton>
           </div>

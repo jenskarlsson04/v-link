@@ -131,15 +131,6 @@ function Carplay() {
         }
     };
 
-    const launch = () => {
-        setTimeout(() => {
-            app.update((state) => {
-                // Trigger user activation
-                state.system.carplay.user = true;
-            });
-        }, 1000);
-      }
-
     useEffect(() => {
         console.log(app.system.carplay);
         console.log(app.system.interface);
@@ -150,7 +141,7 @@ function Carplay() {
             <Body2>
                 {app.system.carplay.paired && app.system.carplay.dongle
                     ? app.system.carplay.connected && app.system.carplay.worker
-                        ? (() => launch())()
+                        ? "LAUNCHING..."
                         : "CONNECT iPHONE / ANDROID DEVICE"
                     : "CLICK TO PAIR DONGLE"}
             </Body2>

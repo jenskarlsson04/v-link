@@ -89,6 +89,32 @@
     "title": "Classic Dash",
     "type": "data",
 
+    "message_data": {
+      "type": "can",
+      "value": "boost",
+      "label": "Sensor"
+    },
+    "message_option": {
+      "type": null,
+      "label": "Operator",
+      "value": ">",
+      "options": [
+        ">",
+        "=",
+        "<"
+      ]
+    },
+    "message_threshold": {
+      "type": null,
+      "label": "Threshold",
+      "value": 1
+    },
+    "message_text": {
+      "type": "text",
+      "label": "Message",
+      "value": "Boost above threshold!"
+    },
+
     "gauge_1": {
       "type": "can",
       "value": "intake",

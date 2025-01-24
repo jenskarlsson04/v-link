@@ -1,6 +1,8 @@
 import styled, { useTheme } from 'styled-components';
 import { DATA, APP } from '../../store/Store';
 import { Typography } from '../../theme/styles/Typography';
+import { CustomIcon } from '../../theme/styles/Icons';
+
 
 
 const Container = styled.div`
@@ -40,8 +42,10 @@ const Svg = styled.svg`
 
 const Divider = styled.div`
   flex: 1 1 0px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.dark};
-  margin: 5px;
+  border-bottom: 1px solid ${({ color }) => color};
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 10px;
   align-self: flex-end;
 `
 
@@ -87,21 +91,27 @@ const DataList = (dashPage, itemCount, columns) => {
             const boxIndex = columnBoxes[i];
 
             //Check if there is only value
-            if (!isNaN(boxIndex)) { 
+            if (!isNaN(boxIndex)) {
 
                 const dataName = dashPage[`value_${boxIndex + 1}`].value
                 const dataType = dashPage[`value_${boxIndex + 1}`].type
                 const dataLabel = modules[dataType]((state) => state.settings.sensors[dataName].label)
                 const dataUnit = modules[dataType]((state) => state.settings.sensors[dataName].unit)
+                const dataLimit = modules[dataType]((state) => state.settings.sensors[dataName].limit_start)
                 const dataValue = data[dataName]
 
 
                 if (boxIndex !== undefined) {
                     const valueBox = (
+
                         <Svg key={`value_${boxIndex + 1}`} viewBox={`0 0 ${theme.interaction.buttonWidth} 30px`}>
                             <defs>
                                 <linearGradient id="fadeBorder" x1="0%" y1="0%" x2="0%" y2="100%">
                                     <stop offset="0%" stopColor={theme.colors.medium} />
+                                    <stop offset="80%" stopColor="rgba(255, 255, 255, 0)" />
+                                </linearGradient>
+                                <linearGradient id="fadeLimit" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor={theme.colors.theme.blue.highlightDark} />
                                     <stop offset="80%" stopColor="rgba(255, 255, 255, 0)" />
                                 </linearGradient>
                             </defs>
@@ -112,15 +122,31 @@ const DataList = (dashPage, itemCount, columns) => {
                                 height={theme.interaction.buttonHeight}
                                 rx="12" ry="12"
                                 fill="rgba(0, 0, 0, 0.2)"
-                                stroke="url(#fadeBorder)"
-                                strokeWidth="1"
+                                stroke={dataValue > dataLimit
+                                    ? "url(#fadeLimit)"
+                                    : "url(#fadeBorder)"}
+                                strokeWidth={dataValue > dataLimit
+                                    ? 2
+                                    : 1}
                             />
+                            {dataValue > dataLimit && (
+                                <use
+                                    href={`/assets/svg/icons/bold/${'err_bold'}.svg#${'err'}`}
+                                    x="10" y="7.5"
+                                    width="20" height="20"
+                                    stroke={theme.colors.theme.blue.highlightDark}
+                                    strokeWidth={3}
+                                />
+                            )}
                             <text
                                 x="50%" y="28%"
-                                textAnchor="middle" alignmentBaseline="central"
-                                fontSize="16" fill={theme.colors.light}
+                                textAnchor="middle"
+                                alignmentBaseline="central"
+                                fontSize="16"
+                                fill={theme.colors.light}
                                 fontFamily="Arial, sans-serif"
                             >
+
                                 {dataValue}
                                 {dataUnit}
 
@@ -129,12 +155,20 @@ const DataList = (dashPage, itemCount, columns) => {
                     );
 
                     const label = (
-                        <span style={{ fontSize: '14px', color: theme.colors.light }}>
+                        <span style={{
+                            fontSize: '14px',
+                            color: dataValue > dataLimit
+                                ? theme.colors.theme.blue.highlightDark
+                                : theme.colors.light
+                        }}>
                             {dataLabel}
                         </span>
                     );
 
-                    const divider = <Divider />;
+                    const divider = <Divider color={dataValue > dataLimit
+                        ? theme.colors.theme.blue.highlightDark
+                        : theme.colors.medium
+                    } />;
 
                     // For the left column (colIndex === 0): label -> divider -> valueBox
                     // For the right column (colIndex === 1): valueBox -> divider -> label

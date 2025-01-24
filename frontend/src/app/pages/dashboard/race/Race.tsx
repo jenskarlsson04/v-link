@@ -1,7 +1,5 @@
 import styled, { useTheme } from 'styled-components';
 
-
-import ValueBox from './../../../components/ValueBox';
 import LinearGauge from './../../../components/LinearGauge';
 import DataList from '../../../components/DataList'
 
@@ -15,8 +13,15 @@ const Container = styled.div`
   height: 100%;
 `;
 
+const Gauge = styled.div`
+  height: 60%;
+  width: 100%;
+  gap: 20px;
+`;
+
 const List = styled.div`
-  display: flex;
+  height: 40%;
+  width: 100%;
   gap: 20px;
 `;
 
@@ -27,7 +32,9 @@ const Race = () => {
 
 	return (
 		<Container>
-			<LinearGauge />
+			<Gauge>
+				<LinearGauge />
+			</Gauge>
 			<List>
 				{Datalist}
 			</List>

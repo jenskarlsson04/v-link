@@ -86,7 +86,7 @@ const DataBox = (dashPage) => {
     /* Observe container resizing and update dimensions. */
     useEffect(() => {
         const handleResize = () => {
-            if(containerRef.current) {
+            if (containerRef.current) {
                 setDimensions({
                     width: containerRef.current.offsetWidth,
                     height: containerRef.current.offsetHeight,
@@ -113,6 +113,51 @@ const DataBox = (dashPage) => {
     //const limitStart = modules[progressType]((state) => state.settings.sensors[progressName].limit_start)
     //const minValue = modules[progressType]((state) => state.settings.sensors[progressName].min_value)
 
+    const [customMsg, setCustomMsg] = useState('No Messages')
+    const [toggle, setToggle] = useState(false)
+
+    const centerName = settings.message_data.value
+    const centerType = settings.message_data.type
+    const centerID = modules[centerType]((state) => state.settings.sensors[centerName].app_id)
+    const centerMsg = settings.message_text.value
+    const centerLimit = settings.message_threshold.value
+    const centerData = data[centerName]
+    const centerOperator = settings.message_option.value
+
+    /* Update center values. */
+    useEffect(() => {
+        const defaultText = 'No Messages'
+
+        if (centerOperator === '>') {
+            if (centerData > centerLimit) {
+                setCustomMsg(centerMsg)
+                setToggle(true)
+            }
+            else {
+                setCustomMsg(defaultText)
+                setToggle(false)
+            }
+        } else if (centerOperator === '<') {
+            if (centerData < centerLimit) {
+                setCustomMsg(centerMsg)
+                setToggle(true)
+            }
+            else {
+                setCustomMsg(defaultText)
+                setToggle(false)
+            }
+        } else if (centerOperator === '=') {
+            if (centerData === centerLimit) {
+                setCustomMsg(centerMsg)
+                setToggle(true)
+            }
+            else {
+                setCustomMsg(defaultText)
+                setToggle(false)
+            }
+        }
+    }, [centerData]);
+
 
 
     // Return the layout
@@ -122,7 +167,7 @@ const DataBox = (dashPage) => {
                 <CustomIcon color={theme.colors.light} stroke={2} size={'25px'}>
                     <use xlinkHref={`/assets/svg/icons/bold/${leftID}_bold.svg#${leftID}`}></use>
                 </CustomIcon>
-                <CustomIcon color={theme.colors.medium} stroke={2} size={'40px'}>
+                <CustomIcon color={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium} stroke={2} size={'40px'}>
                     <use xlinkHref={`/assets/svg/icons/bold/${'err_bold'}.svg#${'err'}`}></use>
                 </CustomIcon>
                 <CustomIcon color={theme.colors.light} stroke={2} size={'25px'}>
@@ -169,10 +214,10 @@ const DataBox = (dashPage) => {
                             textAnchor="middle"
                             alignmentBaseline="middle"
                             fontSize="16"
-                            fill={theme.colors.medium}
+                            fill={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium}
                             fontFamily="Arial, sans-serif"
                         >
-                            No Messages
+                            {customMsg}
                         </text>
 
                         <text

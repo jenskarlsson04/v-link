@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styled, { useTheme } from 'styled-components';
 
 import { APP } from '../../../../store/Store';
@@ -14,71 +14,79 @@ const Container = styled.div`
   height: 100%;
 `;
 
+const Gauges = styled.div`
+  display: flex; 
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+
+
+  width: 100%;
+  height: 70%;
+
+  background-image: url(/assets/svg/background/horizon.svg#horizon);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+`;
+
+
 const Classic = () => {
 	const app = APP((state) => state);
 
 	const theme = useTheme()
+	const Databox = DataBox(app.settings.dash_race) // Amount of Items, 2 Columns
 
-	const gaugeSize = 0.75 // 0.1 - 1.0 -> Percentage of parent div height
-	const gauges = 3
-	const [size, setSize] = useState(0);
+
+	/* Observe container resizing and update dimensions. */
+	const containerRef = useRef(null);
+	    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
 
 	useEffect(() => {
-		const width = (app.system.contentSize.width - (app.settings.general.contentPadding.value * 2)) / gauges
-		const height = (app.system.contentSize.height - (app.settings.general.contentPadding.value * 2)) * gaugeSize
+		const handleResize = () => {
+			if (containerRef.current) {
+				setDimensions({
+					width: containerRef.current.offsetWidth,
+					height: containerRef.current.offsetHeight,
+				});
+			}
+		};
 
-		if (width <= height) {
-			setSize(width)
-		} else if (width >= height) {
-			setSize(height)
-		}
-	}, [app.system.contentSize, app.settings.general.contentPadding.value])
-
-
-	const Databox = DataBox(app.settings.dash_race) // Amount of Items, 2 Columns
+		const resizeObserver = new ResizeObserver(handleResize);
+		if (containerRef.current) resizeObserver.observe(containerRef.current);
+		return () => resizeObserver.disconnect();
+	}, []);
 
 	return (
 		<Container>
-			<div
-				style={{
-					flex: 1,
-
-					display: 'flex',
-					justifyContent: 'center',
-					alignItems: 'flex-end',
-
-					height: '100%',
-					width: '100%',
-
-					backgroundImage: 'url(/assets/svg/background/horizon.svg#horizon)', /* Corrected */
-					backgroundSize: 'cover',
-					backgroundRepeat: 'no-repeat',
-					backgroundPosition: 'center',
-				}}>
-				<div style={{ height: '60%' }}>
+			<Gauges ref={containerRef}>
+				<div style={{ height: '65%' }}>
 					<RadialGauge
 						sensor={app.settings.dash_classic.gauge_2.value}
 						type={app.settings.dash_classic.gauge_2.type}
+						bars={false}
 					/>
 				</div>
 				<RadialGauge
 					sensor={app.settings.dash_classic.gauge_1.value}
 					type={app.settings.dash_classic.gauge_1.type}
+					
 				/>
 				<RadialGauge
 					sensor={app.settings.dash_classic.gauge_2.value}
 					type={app.settings.dash_classic.gauge_2.type}
 				/>
-				<div style={{ height: '60%' }}>
+				<div style={{ height: '65%' }}>
 					<RadialGauge
 						sensor={app.settings.dash_classic.gauge_2.value}
 						type={app.settings.dash_classic.gauge_2.type}
+						bars={false}
 					/>
 				</div>
-			</div>
+			</Gauges>
 			<div
 				style={{
-					//flex: 0,
 					width: '100%',
 					height: '35%',
 

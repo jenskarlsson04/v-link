@@ -11,7 +11,6 @@ import useCarplayAudio from './useCarplayAudio'
 import { useCarplayTouch } from './useCarplayTouch'
 import { InitEvent } from './worker/render/RenderEvents'
 
-import { RotatingLines } from 'react-loader-spinner'
 import { APP, MMI } from '../store/Store';
 import hexToRGBA from '../app/helper/HexToRGBA'
 
@@ -320,7 +319,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
           state.system.carplay.dongle = false;
           state.system.carplay.phone = false;
           state.system.carplay.stream = false;
-
           state.system.carplay.user = false;
 
         });

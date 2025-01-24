@@ -203,8 +203,9 @@ const Settings = () => {
     appChannel.emit("load");
   }
 
-  // Reset Settings
+  // System Tasks
   function systemTask(request) {
+    /*
     if (!['reset', 'rti', 'hdmi'].includes(request)) {
       openModal(
         <div>
@@ -212,11 +213,13 @@ const Settings = () => {
         </div>
       );
     }
-
+      */
+    console.log('click')
     sysChannel.emit("systemTask", request);
     setReset(true)
   }
 
+  // Toggle Threads
   useEffect(() => {
     if (reset) {
       setCurrentSettings(app.settings)
@@ -264,7 +267,7 @@ const Settings = () => {
       const dataOptions = {}
 
       // Get current value
-      if (type === "data" && content.type != null) {             // Is the setting responsible for handling data and is a data type assigned?               
+      if (type === "data" && content.type != null && content.type != 'text') {             // Is the setting responsible for handling data and is a data type assigned?               
         label = content.label
         value = dataStores[content.type][content.value].label    // Read content from combined data store
         Object.keys(dataStores).forEach((storeType) => {         // Dataoptions is mapping the sensor, e.g. "Boost" to the corresponding settingsfile, in this case "can"
@@ -280,11 +283,16 @@ const Settings = () => {
 
       // Get options
       //Check if value is a number or boolean
-      const dropdown = (typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
+      const isText = (content.type === 'text')
+      console.log(content)
+
+      const dropdown = (isText || typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
         ? null                                                                    //Yes? Return null
         : (content.options || Object.keys(dataOptions).map((key) =>               //No?  Create dropdown from options
           key
         ))
+        console.log(content.options, dataOptions)
+        console.log(dropdown)
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
@@ -334,13 +342,14 @@ const Settings = () => {
         document.addEventListener('keydown', handleKeyPress);
       };
 
+
       return (
         <Element>
           <Caption2>{label}</Caption2>
           <Divider />
           <Spacer>
-            {dropdown ? (
-              <Select
+            {dropdown
+            ? (<Select
                 name={setting}
                 isActive={true}
                 textSize={theme.typography.caption2.fontSize}
@@ -353,20 +362,17 @@ const Settings = () => {
                     {option.label || option}
                   </option>
                 ))}
-              </Select>
-            ) : (
-              isBoolean ? (
-                <ToggleSwitch>
+              </Select>)
+            : (isBoolean
+              ? (<ToggleSwitch>
                   <input type="checkbox" name={setting} checked={value} onChange={handleChange} />
                   <span className="slider"></span>
-                </ToggleSwitch>
-              ) :
-                isBinding ? (
-                  <Button name={setting} onClick={() => { handleBinding(key, setting) }}>
+                </ToggleSwitch>)
+              : isBinding
+                ? ( <Button name={setting} onClick={() => { handleBinding(key, setting) }}>
                     {value}
-                  </Button>
-                ) :
-                  <Input name={setting} type={'number'} value={value} onChange={handleChange} />
+                  </Button>)
+                :  <Input name={setting} type={isText ? 'text' : 'number'} value={value} onChange={handleChange} />
             )}
           </Spacer>
         </Element>

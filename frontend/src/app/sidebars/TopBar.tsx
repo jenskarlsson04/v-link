@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { APP } from '../../store/Store';
-import styled, { useTheme } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 
 import { IconSmall } from '../../theme/styles/Icons';
 import { Caption1 } from '../../theme/styles/Typography';
@@ -9,8 +9,15 @@ const Topbar = styled.div`
   position: absolute;
   top: 0;
   z-index: 3;
+
   background: ${({ theme }) => theme.colors.gradients.gradient1};
+
   height: ${({ app }) => `${app.settings.side_bars.topBarHeight.value}px`};
+  animation: ${({ app, theme, isActive }) => css`
+    ${isActive
+      ? theme.animations.getSlideUp(-app.settings.side_bars.topBarHeight.value)
+      : theme.animations.getSlideDown(-app.settings.side_bars.topBarHeight.value)} 0.3s ease-in-out forwards
+  `};
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -19,6 +26,8 @@ const Topbar = styled.div`
   box-sizing: border-box;
   padding: 5px 20px;
   gap: 10px;
+
+  overflow: hidden;
 `;
 
 const Left = styled.div`
@@ -34,6 +43,7 @@ const Middle = styled.div`
   display: flex;
   flex-direction: row;
   justify-content: center;
+  align-items: center;
   width: 100%;
   height: 100%;
 `;
@@ -49,16 +59,19 @@ const Right = styled.div`
 `;
 
 const Scroller = styled.div`
-  position: relative; /* Necessary for absolute positioning of children */
+  position: relative;
+  display: flex; 
+  flex-direction: column;
+
 
   width: 100%;
-  height: 30px; /* Fixed height for the scroller */
+  height: 30px;
 
-  overflow: hidden; /* Hide content outside the container */
+  overflow: hidden;
 `;
 
 const ScrollerContent = styled.div`
-  position: absolute; /* Stack children on top of each other */
+  position: absolute;
 
   display: flex;
   justify-content: flex-start;
@@ -95,20 +108,23 @@ const TopBar = () => {
   }, [app.system.streamState, app.system.view]);
 
   return (
-    <Topbar theme={theme} app={app}>
+    <Topbar isActive={
+      app.settings.side_bars.dashBar.value
+  &&  app.system.view === 'Carplay'
+  && !app.system.interface.content
+  && !app.system.interface.navBar}
+      theme={theme}
+      app={app}>
       <Left>
         <Scroller>
-          {/* First Content: System Info */}
-          <ScrollerContent active={carplay}>
+          <ScrollerContent active={app.system.interface.content}>
+            <Caption1>{time.toLocaleTimeString('sv-SV', { hour: '2-digit', minute: '2-digit' })}</Caption1>
+          </ScrollerContent>
+          <ScrollerContent active={!app.system.interface.content}>
             <IconSmall isActive={true}>
               <use xlinkHref="/assets/svg/icons/thin/oil_temp.svg#oil_temp" />
             </IconSmall>
             <Caption1>73°C</Caption1>
-          </ScrollerContent>
-
-          {/* Second Content: Time */}
-          <ScrollerContent active={!carplay}>
-            <Caption1>{time.toLocaleTimeString('sv-SV', { hour: '2-digit', minute: '2-digit' })}</Caption1>
           </ScrollerContent>
         </Scroller>
       </Left>
@@ -118,14 +134,16 @@ const TopBar = () => {
         </svg>
       </Middle>
       <Right>
+        {/*
         <IconSmall isActive={false}>
           <use xlinkHref="/assets/svg/bluetooth.svg#bluetooth" />
         </IconSmall>
-        <IconSmall isActive={app.system.phoneState}>
-          <use xlinkHref="/assets/svg/phone.svg#phone" />
+        */}
+        <IconSmall isActive={app.system.carplay.phone}>
+          <use xlinkHref="/assets/svg/icons/interface/phone.svg#phone" />
         </IconSmall>
         <IconSmall isActive={app.system.wifiState}>
-          <use xlinkHref="/assets/svg/wifi.svg#wifi" />
+          <use xlinkHref="/assets/svg/icons/interface/wifi.svg#wifi" />
         </IconSmall>
       </Right>
     </Topbar>

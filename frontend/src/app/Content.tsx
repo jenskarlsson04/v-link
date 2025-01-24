@@ -45,7 +45,6 @@ const Card = styled.div`
 
   overflow: hidden;
 
-  /* Apply the animation based on the current view */
   animation: ${({ theme, currentView, carplayVisible, minHeight, maxHeight, collapseLength, stream }) => {
     const delay = stream ? 0 : 2; // Delay in seconds if stream is false
     if (currentView === 'Carplay' && carplayVisible) {
@@ -65,23 +64,14 @@ const Card = styled.div`
   transition: none;
   transform-origin: top;
 
-  /* Add keyframes for fade effects */
   @keyframes fadeOut {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-    }
+    from { opacity: 1;}
+    to   { opacity: 0;}
   }
 
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
 `;
 
@@ -292,7 +282,7 @@ const Content = () => {
       {app.system.startedUp ? (
         <>
           <TopBar app={app} />
-          <NavBar isActive={app.system.interface.navBar} isHovering={isHovering} />
+          <NavBar isHovering={isHovering} />
           <MainContainer app={app} height={windowSize.height} width={windowSize.width} onClick={handleClick}>
             <SideBar collapseLength={collapseLength} />
             <Card

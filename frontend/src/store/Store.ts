@@ -94,12 +94,11 @@ const MMI = create(
   }))
 );
 
-const DATA = create(
-  immer((set) => ({
-    data: {}, // Object to store live vehicle data
-    update: (updater) => set(updater),
-  }))
-);
+const DATA = create((set) => ({
+  data: {}, // Object to store live vehicle data
+  update: (newData) =>
+    set((state) => ({ data: { ...state.data, ...newData } })),
+}));
 
 const APP = create(
   immer((set) => ({

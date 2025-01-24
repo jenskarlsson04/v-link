@@ -9,7 +9,7 @@ export const theme = {
   },
   
   icons: {
-    small: '10px',
+    small: '14px',
     medium: '18px',
     large: '32px',
     xlarge: '64px',

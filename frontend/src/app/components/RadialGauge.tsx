@@ -1,7 +1,7 @@
 import { DATA, APP } from '../../store/Store';
 import styled, { useTheme } from 'styled-components';
-
 import { useState, useEffect, useRef } from 'react';
+import * as d3 from 'd3';
 
 
 const cos = Math.cos;
@@ -18,6 +18,23 @@ const formatToSingleDecimal = (number) => {
     const magnitude = Math.floor(Math.log10(Math.abs(number)));
     const divisor = Math.pow(10, magnitude);
     return Math.floor(number / divisor);
+};
+
+const calculateIncrement = (value) => {
+    const magnitude = Math.floor(Math.log10(Math.abs(value)));
+
+    // Determine step size based on the magnitude of the value
+    if (value <= 30) {
+        return 1; // Steps of 1 for values below 10
+    } else if (value > 30 && value < 200) {
+        return 10; // Steps of 10 for values between 10 and 200
+    } else if (value >= 200 && value < 1000) {
+        return 100; // Steps of 100 for values between 200 and 1000
+    } else if (value >= 1000 && value < 10000) {
+        return 1000; // Steps of 1000 for values between 1000 and 10000
+    } else {
+        return Math.pow(10, magnitude - 2); // Steps of 10000 or larger for very large values
+    }
 };
 
 const Container = styled.div`
@@ -38,6 +55,8 @@ const Container = styled.div`
 export const RadialGauge = ({
     sensor,
     type,
+    bars = true,
+    showLabels = true,
 }) => {
 
     // Load Settings
@@ -71,7 +90,7 @@ export const RadialGauge = ({
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [mainRadius, setMainRadius] = useState(0);
 
-    const padding = 35;
+    const padding = 40;
     const containerRef = useRef(null);
 
     /* Observe container resizing and update dimensions. */
@@ -102,8 +121,7 @@ export const RadialGauge = ({
     // Main Arc
     const arcGap = 90;
     let mainArc = 360 - arcGap
-    if (mainArc < 1)
-        mainArc = 1
+    if (mainArc < 1) mainArc = 1
 
 
     // Circle declarations
@@ -111,18 +129,10 @@ export const RadialGauge = ({
     const outlineRadius = mainRadius - outlineOffset
 
 
+    if (isNaN(value)) value = minValue;
+    if (value > maxValue) value = maxValue;
+    if (value < minValue) value = minValue;
 
-
-    if (isNaN(value))
-        value = minValue;
-
-    if (value > maxValue) {
-        value = maxValue;
-    }
-
-    if (value < minValue) {
-        value = minValue;
-    }
 
     const angleToRadians = (angle) => angle * π / 180;
 
@@ -181,196 +191,252 @@ export const RadialGauge = ({
     }
 
 
+    const generateMarkerGradient = (index, totalMarkers, progressArc) => {
+        // Find the position of the lightest color (corresponding to progressArc)
+        const lightestPosition = Math.floor((progressArc / mainArc) * totalMarkers);
+
+        // Now, create a color scale where the lightest color corresponds to the progressArc position
+        const colorScale = d3.scaleLinear()
+            .domain([0, lightestPosition, totalMarkers - 1])  // Domain from start, progress arc, to end
+            .range([theme.colors.theme.blue.default, ( data[sensor] > limitStart ? theme.colors.theme.blue.highlightLight : theme.colors.theme.blue.active)]);  // Dark to active to light
+
+        const color = colorScale(index);  // Get color based on the index
+
+        return color;  // Return color for the current marker
+    };
 
 
-    const markerCount = 75 // Total number of markers
-    const markerStart = 10 // Distance from the center for marker start
-    const markerEnd = 25   // Distance from the center for marker end
-    const markerWidth = 2 // Width of the markers
-
-    // Marker Generation
-    const generateMarkers = () => {
+    // Modify the `generateMarkers` function to include the gradient effect
+    const generateMarkers = (markerStart, markerEnd, markerWidth, markerCount) => {
         const markers = [];
         const angleStep = mainArc / markerCount; // Angle step for all markers along the main arc
         const maxMarkers = Math.floor((progressArc / mainArc) * markerCount); // Only draw markers up to progressArc
 
+        // Iterate over and generate markers up to the current value
         for (let i = 0; i <= maxMarkers; i++) {
             const angle = i * angleStep;
             const start = computeCoordinates(angle, mainRadius - markerStart);
             const end = computeCoordinates(angle, mainRadius - markerEnd);
 
-            markers.push(
-                <line
-                    key={i}
-                    x1={start[0]}
-                    y1={start[1]}
-                    x2={end[0]}
-                    y2={end[1]}
-                    stroke={theme.colors.medium}
-                    strokeWidth={markerWidth}
-                />
-            );
+            markers.push({
+                x1: start[0],
+                y1: start[1],
+                x2: end[0],
+                y2: end[1],
+                index: i
+            });
         }
         return markers;
     };
 
 
-    const labelCount = formatToSingleDecimal(maxValue) + 1;  // Number of labels you want to display
-    const labelOffset = -20;  // Distance from the center to place the labels
 
     const generateTextLabels = () => {
+        const labelOffset = -(mainRadius / 4);  // Distance from the center to place the labels
+        const increment = calculateIncrement(maxValue); // Calculate increment size based on maxValue
+        const numLabels = Math.floor(maxValue / increment) + 1; // Calculate how many labels to generate
         const labels = [];
-        const angleStep = mainArc / (labelCount - 1);  // Calculate angle for each label position
+        const angleStep = mainArc / (numLabels - 1);  // Calculate angle for each label position
 
-        for (let i = 0; i < labelCount; i++) {
+        for (let i = 0; i < numLabels; i++) {
             const angle = i * angleStep;
             const [x, y] = computeCoordinates(angle, mainRadius - labelOffset);
-            const labelValue = minValue + (i / (labelCount - 1)) * (maxValue - minValue);  // Calculate label value
+            const labelValue = minValue + (i / (numLabels - 1)) * (maxValue - minValue);  // Calculate label value
 
-            labels.push(
-                <text
-                    key={i}
-                    fill={theme.colors.light}
-                    fontSize={(0.4 / 10) * dimensions.height}  // Adjust font size based on height
-                    x={x}
-                    y={y}
-                    textAnchor="middle"
-                    dominantBaseline="middle"  // Vertically center the text
-                >
-                    {labelValue.toFixed(0)}  {/* Display value, adjusted to integer */}
-                </text>
-            );
+            // Store label data as an object, not JSX
+            labels.push({
+                x,
+                y,
+                labelValue: labelValue.toFixed(0), // Store label value as string (formatted)
+            });
         }
-
         return labels;
     };
 
 
+    useEffect(() => {
+        if (containerRef.current) {
+            const svg = d3.select(containerRef.current).select("svg");
+
+            // Reset the SVG elements that need updating only (arc paths)
+            svg.selectAll(".valueLabel").remove()
+            svg.selectAll(".outlineArc").remove();
+            svg.selectAll(".backgroundArc").remove();
+            svg.selectAll(".progressArc").remove();
+            svg.selectAll(".limitArc").remove();
+            svg.selectAll(".marker").remove();
+            svg.selectAll(".label").remove(); // Remove previous labels
+
+            svg.append("defs")
+                .append("linearGradient")
+                .attr("id", "progressGradient")
+                .attr("x1", "0%")
+                .attr("y1", "100%")
+                .attr("x2", "100%")
+                .attr("y2", "0%")
+                .append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", theme.colors.theme.blue.default)  // Starting color
+                .append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", theme.colors.theme.blue.light); // Ending color
+
+            // Add the main arc as background
+            svg
+                .append("path")
+                .attr("class", "backgroundArc")
+                .attr("d", generateArc(mainArc, 0, mainRadius, 0, mainArc, π))
+                .attr("fill", "none")
+                .attr("stroke", theme.colors.dark)
+                .attr("stroke-width", 5);
+
+            // Add outline arc path
+            svg
+                .append("path")
+                .attr("class", "outlineArc")
+                .attr("d", generateArc(progressArc, 0, outlineRadius, 0, progressArc, π))
+                .attr("fill", "none")
+                .attr("stroke", theme.colors.light)
+                .attr("stroke-width", 2);
+
+            // Add limit arc path
+            svg
+                .append("path")
+                .attr("class", "limitArc")
+                .attr("d", generateArc(mainArc, limitArc, outlineRadius, 0, limitArc, mainArc))
+                .attr("fill", "none")
+                .attr("stroke", theme.colors.theme.blue.highlightDark)
+                .attr("stroke-width", 3);
+
+            const progressCount = 140 // Total number of markers
+            const progressStart = -2 // Distance from the center for marker start
+            const progressEnd = 2   // Distance from the center for marker end
+            const progressWidth = 3 // Width of the markers
+            const progress = svg.selectAll(".marker").data(generateMarkers(progressStart, progressEnd, progressWidth, progressCount)); //markerStart, markerEnd, markerWidth, markerCount
+            progress.exit().remove(); // Remove old markers
+
+
+            progress
+                .enter()
+                .append("line")
+                .attr("class", "progressArc")
+                .attr("x1", (d) => d.x1)
+                .attr("y1", (d) => d.y1)
+                .attr("x2", (d) => d.x2)
+                .attr("y2", (d) => d.y2)
+                .attr("stroke", (d, i) => generateMarkerGradient(i, 130, progressArc))  // Apply gradient // 
+                .attr("stroke-width", progressWidth)
+                .attr("opacity", 1); // Fade-in effect
+
+            progress
+                .transition()
+                .duration(1000)
+                .attr("x1", (d) => d.x1)
+                .attr("y1", (d) => d.y1)
+                .attr("x2", (d) => d.x2)
+                .attr("y2", (d) => d.y2)
+                .attr("stroke", (d, i) => generateMarkerGradient(i, 130, progressArc));  // Apply gradient in transition
+
+            // Add markers with gradient color effect
+            if (bars) {
+                const markerCount = 60 // Total number of markers
+                const markerStart = 7 // Distance from the center for marker start
+                const markerEnd = 20   // Distance from the center for marker end
+                const markerWidth = 3 // Width of the markers
+                const markers = svg.selectAll(".marker").data(generateMarkers(markerStart, markerEnd, markerWidth, markerCount)); //markerStart, markerEnd, markerWidth, markerCount
+                markers.exit().remove(); // Remove old markers
+
+                markers
+                    .enter()
+                    .append("line")
+                    .attr("class", "marker")
+                    .attr("x1", (d) => d.x1)
+                    .attr("y1", (d) => d.y1)
+                    .attr("x2", (d) => d.x2)
+                    .attr("y2", (d) => d.y2)
+                    .attr("stroke", (d) => theme.colors.medium)  // Apply gradient // 
+                    .attr("stroke-width", markerWidth)
+                    .attr("opacity", 1); // Fade-in effect
+
+                markers
+                    .transition()
+                    .duration(1000)
+                    .attr("x1", (d) => d.x1)
+                    .attr("y1", (d) => d.y1)
+                    .attr("x2", (d) => d.x2)
+                    .attr("y2", (d) => d.y2)
+                    .attr("stroke", (d, i) => generateMarkerGradient(i, markerCount, progressArc));  // Apply gradient in transition
+            }
+
+            // Add text labels
+            const labels = svg.selectAll(".label").data(generateTextLabels());
+
+            // Remove old labels
+            labels.exit().remove();
+
+            // Add new labels
+            const labelEnter = labels
+            .enter()
+            .append("text")
+            .attr("class", "label")
+            .attr("fill", theme.colors.light)
+            .attr("font-size", (0.5 / 10) * dimensions.height) // Increased font size for visibility
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("opacity", 1) // Ensure visibility
+            .text((d) => {
+                // Check if labelValue is above 4 digits
+                const value = d.labelValue;
+                if (value.toString().length > 3) {
+                    return value.toString()[0]; // Take only the first digit
+                }
+                return value; // Otherwise, keep the original value
+            });
+
+            // Animate the position of the labels
+            labelEnter
+                .attr("x", (d) => d.x)
+                .attr("y", (d) => d.y)
+                .transition()
+                .duration(1000) // Transition duration for smooth update
+                .attr("x", (d) => d.x)
+                .attr("y", (d) => d.y);
+
+            // Add unit label
+            svg.append("text")
+                .attr("class", "valueLabel")
+                .attr("fill", textColor1)
+                .attr("font-size", (0.75 / 10) * dimensions.height)
+                .attr("x", "50%")
+                .attr("y", "52%")
+                .attr("dy", "20px")
+                .attr("text-anchor", "middle")
+                .text(settings.unit);
+
+            // Add value label
+            svg.append("text")
+                .attr("class", "valueLabel")
+                .attr("fill", textColor2)
+                .attr("font-size", (1.2 / 10) * dimensions.height)
+                .attr("x", "50%")
+                .attr("y", "42%")
+                .attr("dy", "20px")
+                .attr("text-anchor", "middle")
+                .text(data[sensor]);
+        }
+    }, [dimensions, progressArc, bars]); // Re-run whenever progressArc, dimensions, or bars change
+
+
+
+
+
+
+
+
     return (
         <Container ref={containerRef}>
-            <svg
-                height={dimensions.height}
-                width={dimensions.height}
-            >
-                {/* Glow Effect Filter */}
-                <defs>
-                    <filter id="glowEffect" x="-100%" y="-100%" width="400%" height="400%">
-                        {/* Add a blur effect */}
-                        <feGaussianBlur stdDeviation="20" result="coloredBlur" />
-                        {/* Merge the original and the blurred path */}
-                        <feMerge>
-                            <feMergeNode in="coloredBlur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-
-                    <linearGradient id="progressGradient" gradientUnits="userSpaceOnUse">
-                        <stop
-                            offset="0%"
-                            stopColor={theme.colors.theme.blue.default}
-                            stopOpacity="1"
-                        />
-                        <stop
-                            offset={`${((progressArc - 30) / mainArc) * 100}%`}
-                            stopColor={theme.colors.theme.blue.active}
-                            stopOpacity="1"
-                        />
-                        <stop
-                            offset={`${((progressArc - 15) / mainArc) * 100}%`}
-                            stopColor={theme.colors.theme.blue.active}
-                            stopOpacity="1"
-                        />
-                        <stop
-                            offset={`${((progressArc - 1) / mainArc) * 100}%`}
-                            stopColor={theme.colors.light}
-                            stopOpacity="1"
-                        />
-                        <stop
-                            offset="100%"
-                            stopColor={theme.colors.light}
-                            stopOpacity="0"
-                        />
-                    </linearGradient>
-
-                </defs>
-
-                <circle
-                    cx={cx}
-                    cy={cy}
-                    r={mainRadius}
-                    fill='none'
-                    stroke={borderColor}
-                    strokeWidth={0}
-                />
-
-                <text
-                    className="gauge_unitLabel"
-                    fill={textColor1}
-                    fontSize={(0.5 / 10) * dimensions.height}
-                    x="50%"
-                    y="55%"
-                    dy="20px"
-                    textAnchor="middle"
-                >
-                    {`${settings.unit}`}
-                </text>
-
-                <text
-                    className="gauge_valueLabel"
-                    fill={textColor2}
-                    fontSize={(1.2 / 10) * dimensions.height}
-                    x="50%"
-                    y="45%"
-                    dy="20px"
-                    textAnchor="middle"
-                    filter="url(#glowEffect)"
-                >
-                    {`${data[sensor]}`}
-                </text>
-
-                <path className="backgroundMain"
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    fill='none'
-                    stroke={progressBackgroundColor}
-                    d={generateArc(mainArc, 0, mainRadius, 0, mainArc, π)}
-                />
-
-
-                <path className="progressMain"
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    fill='none'
-                    stroke="url(#progressGradient)"
-                    d={generateArc(progressArc, 0, mainRadius, 0, progressArc, π)}
-                />
-
-                <path className="backgroundOutline"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    fill='none'
-                    stroke={theme.colors.medium}
-                    d={generateArc(mainArc, 0, outlineRadius, 0, mainArc, π)}
-                />
-
-                <path className="progressOutline"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    fill='none'
-                    stroke={theme.colors.light}
-                    d={generateArc(progressArc, 0, outlineRadius, 0, progressArc, π)}
-                />
-
-                <path className="backgroundLimit"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    fill='none'
-                    stroke={theme.colors.theme.blue.highlightDark}
-                    d={generateArc(mainArc, limitArc, outlineRadius, 0, limitArc, mainArc)}
-                />
-
-                {generateMarkers()}
-                {generateTextLabels()}
+            <svg height={dimensions.height} width={dimensions.height}>
+                {/* Future SVG elements will be added dynamically via D3 */}
             </svg>
         </Container>
     );
