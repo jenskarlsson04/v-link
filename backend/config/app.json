@@ -32,7 +32,7 @@
     },
     "startPage": {
       "value": "Dashboard",
-      "label": "Page on StartUp",
+      "label": "Startpage",
       "options": [
         "Dashboard",
         "Carplay",
@@ -58,7 +58,7 @@
       ]
     },
     "contentPadding": {
-      "value": 30,
+      "value": 20,
       "label": "Dashboard Padding"
     }
   },
@@ -69,15 +69,19 @@
 
     "dashBar": {
       "value": true,
-      "label": "TopBar on CarPlay Page"
+      "label": "Carplay in Fullscreen"
     },
     "topBarHeight": {
       "value": 40,
       "label": "TopBar Height"
     },
     "navBarHeight": {
-      "value": 65,
+      "value": 70,
       "label": "NavBar Height"
+    },
+    "sideBarWidth": {
+      "value": 150,
+      "label": "SideBar Width"
     }
   },
 
@@ -85,35 +89,61 @@
     "title": "Classic Dash",
     "type": "data",
 
+    "message_data": {
+      "type": "can",
+      "value": "boost",
+      "label": "Sensor"
+    },
+    "message_option": {
+      "type": null,
+      "label": "Operator",
+      "value": ">",
+      "options": [
+        ">",
+        "=",
+        "<"
+      ]
+    },
+    "message_threshold": {
+      "type": null,
+      "label": "Threshold",
+      "value": 1
+    },
+    "message_text": {
+      "type": "text",
+      "label": "Message",
+      "value": "Boost above threshold!"
+    },
+
     "gauge_1": {
       "type": "can",
-      "value": "intake",
+      "value": "boost",
       "label": "Gauge 1"
     },
     "gauge_2": {
       "type": "can",
-      "value": "boost",
+      "value": "speed",
       "label": "Gauge 2"
     },
     "gauge_3": {
       "type": "can",
-      "value": "coolant",
+      "value": "rpm",
+      "label": "Gauge 3"
+    },
+    "gauge_4": {
+      "type": "can",
+      "value": "lambda1",
       "label": "Gauge 3"
     },
     "value_1": {
-      "type": "can",
-      "value": "lambda1",
-      "label": "Value 1"
+      "type": "adc",
+      "value": "temperature",
+      "label": "Bottom Left"
     },
     "value_2": {
-      "type": "can",
-      "value": "lambda2",
-      "label": "Value 2"
-    },
-    "value_3": {
-      "type": "can",
-      "value": "voltage",
-      "label": "Value 3"
+      "type": "adc",
+      "value": "pressure",
+      "label": "Bottom Right"
     }
   },
 
@@ -121,15 +151,20 @@
     "title": "Race Dash",
     "type": "data",
 
-    "progress_1": {
+    "gauge_1": {
       "type": "can",
       "value": "rpm",
       "label": "Progress Bar"
     },
-    "progress_2": {
+    "gauge_2": {
       "type": "can",
       "value": "boost",
-      "label": "Progress DataBox"
+      "label": "Top Left"
+    },
+    "gauge_3": {
+      "type": "can",
+      "value": "speed",
+      "label": "Center"
     },
     "value_1": {
       "type": "can",

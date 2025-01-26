@@ -1,30 +1,39 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+
+import { theme } from './theme/Theme';
+import styled, { ThemeProvider } from 'styled-components';
+
 
 import { APP, MMI, KEY } from './store/Store';
 import { Socket } from './socket/Socket'
-
-import { shallow } from 'zustand/shallow'
 
 import Splash from './app/Splash'
 import Content from './app/Content'
 
 import Carplay from './carplay/Carplay'
 import Cardata from './cardata/Cardata'
-
-import NavBar from './app/sidebars/NavBar';
 import TopBar from './app/sidebars/TopBar';
-import DashBar from './app/sidebars/DashBar';
+
+import Modal from './app/components/Modal';
 
 import './App.css'
+import './theme/fonts.module.css';
 
+const AppContainer = styled.div`
+  position: absolute;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #0D0D0D, #1C1C1C);
+`;
 
 function App() {
   const mmi = MMI((state) => state);
   const key = KEY((state) => state);
+  const app = APP((state) => state);
 
-  const system = APP((state) => state.system)
+  const system = app.system
 
-  const [receivingVideo, setReceivingVideo] = useState(false)
   const [commandCounter, setCommandCounter] = useState(0)
   const [keyCommand, setKeyCommand] = useState('')
 
@@ -32,7 +41,6 @@ function App() {
     document.addEventListener('keydown', mmiKeyDown)
     return () => {
       document.removeEventListener('keydown', mmiKeyDown)
-      console.log("return")
     }
   }, []);
 
@@ -54,7 +62,6 @@ function App() {
             setKeyCommand(action)
             setCommandCounter(prev => prev + 1)
             if (action === 'selectDown') {
-              console.log('Enter')
               setTimeout(() => {
                 setKeyCommand('selectUp')
                 setCommandCounter(prev => prev + 1)
@@ -66,23 +73,55 @@ function App() {
     }
   }
 
+  // Dimensions of the container
+  const containerRef = useRef(null);
+  const [ready, setReady] = useState(false)
+  /* Observe container resizing and update dimensions. */
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current && system.startedUp) {
+
+        const carplayFullscreen = containerRef.current.offsetHeight
+        const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value
+
+        console.log(carplayFullscreen, carplayWindowed, app.settings.side_bars.dashBar.value)
+
+        app.update((state) => {
+          state.system.windowSize.width = containerRef.current.offsetWidth;
+          state.system.windowSize.height = containerRef.current.offsetHeight;
+
+          state.system.carplaySize.width = containerRef.current.offsetWidth;
+          state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed)
+        });
+
+        setReady(true)
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, [system.startedUp]);
+
   return (
-    <div style={{ overflow: 'hidden', background: 'var(--bgGradient1)', }}>
+    <AppContainer ref={containerRef}>
       <Socket />
       <Cardata />
       <Splash />
 
-      {system.startedUp ?
-        <>
-          {system.interface.dashBar && (<DashBar />)}
-          {system.interface.topBar && (<TopBar />)}
+      {system.startedUp ? (
+        <ThemeProvider theme={theme}>
 
-          <Carplay receivingVideo={receivingVideo} setReceivingVideo={setReceivingVideo} commandCounter={commandCounter} command={keyCommand} />
-          <Content />
-
-          {system.interface.navBar && (<NavBar />)}
-        </> : <></>}
-    </div>
+          {ready && <Carplay
+            commandCounter={commandCounter}
+            command={keyCommand}
+          />}
+          {<Content />}
+        </ThemeProvider>
+      ) : (
+        <></>
+      )}
+    </AppContainer>
   )
 }
 

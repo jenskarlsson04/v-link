@@ -8,8 +8,8 @@ import { DATA } from './../store/Store';
 
 function Cardata () {
 
+  const data = DATA((state) => state)
   const update = DATA((state) => state.update);
-
     
     const canWorker = useMemo(() => {
       const worker = new Worker(
@@ -28,6 +28,10 @@ function Cardata () {
       ) as ADCWorker
       return worker
     }, [])
+
+    useEffect(() => {
+      console.log(data.data)
+    }, data)
   
     useEffect(() => {
         canWorker.onmessage = (event) => {

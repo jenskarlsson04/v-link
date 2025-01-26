@@ -1,223 +1,106 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import styled, { useTheme } from 'styled-components';
+
 import { APP } from '../../../../store/Store';
 
 import RadialGauge from '../../../components/RadialGauge'
-import ValueBox from '../../../components/ValueBox'
+import DataBox from '../../../components/DataBox'
 
-import "./../../../../styles.scss"
-import "./../../../../themes.scss"
 
+const Container = styled.div`
+  display: flex; 
+  flex-direction:column;
+  width: 100%;
+  height: 100%;
+`;
+
+const Gauges = styled.div`
+  display: flex; 
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+
+
+  width: 100%;
+  height: 60%;
+
+  background-image: url(/assets/svg/background/horizon.svg#horizon);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+`;
 
 
 const Classic = () => {
 	const app = APP((state) => state);
 
-	const gaugeSize = 0.75 // 0.1 - 1.0 -> Percentage of parent div height
-	const gauges = 3
-	const [size, setSize] = useState(0);
+	const theme = useTheme()
+	const Databox = DataBox(app.settings.dash_race) // Amount of Items, 2 Columns
+
+
+	/* Observe container resizing and update dimensions. */
+	const containerRef = useRef(null);
+	    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
 
 	useEffect(() => {
-		const width = (app.system.contentSize.width - (app.settings.general.contentPadding.value * 2)) / gauges
-		const height = (app.system.contentSize.height  - (app.settings.general.contentPadding.value * 2)) * gaugeSize
+		const handleResize = () => {
+			if (containerRef.current) {
+				setDimensions({
+					width: containerRef.current.offsetWidth,
+					height: containerRef.current.offsetHeight,
+				});
+			}
+		};
 
-		if (width <= height) {
-			setSize(width)
-		} else if (width >= height) {
-			setSize(height)
-		}
-	}, [app.system.contentSize, app.settings.general.contentPadding.value])
-
+		const resizeObserver = new ResizeObserver(handleResize);
+		if (containerRef.current) resizeObserver.observe(containerRef.current);
+		return () => resizeObserver.disconnect();
+	}, []);
 
 	return (
-		<>
-			<div className="row">
-				<div className="column">
+		<Container>
+			<Gauges ref={containerRef}>
+				<div style={{ height: '80%' }}>
 					<RadialGauge
 						sensor={app.settings.dash_classic.gauge_1.value}
 						type={app.settings.dash_classic.gauge_1.type}
-
-						globalRotation={90}
-						size={size * 0.9}
-
-						borderSize={1}
-						borderGap={5}
-
-						progressOffset={-30}
-						progressWidth={5}
-
-						limitOffset={-20}
-						limitWidth={2}
-
-						tickWidth={2}
-						smallTicks={4}
-						heightSmallTicks={3}
-						bigTicks={3}
-						heightBigTicks={10}
-
-						needleOffset={-30}
-						needleWidth={2}
-
-						borderColor={'var(--boxColorDefault)'}
-						backgroundColor={'var(--coldGreyDark)'}
-						progressBackgroundColor={'var(--boxColorLighter)'}
-						progressFillerColor={'var(--themeDefault)'}
-						tickColor={'var(--boxColorLighter)'}
-						limitColor={'var(--themeAccent)'}
-						needleColor={'var(--themeAccent)'}
-						textColor1={'var(--boxColorLighter)'}
-						textColor2={'var(--themeDefault)'}
-						pivotColor={'var(--boxColorDefault)'}
+						bars={false}
+						showLabels={false}
 					/>
 				</div>
-				<div className="column">
 				<RadialGauge
-						sensor={app.settings.dash_classic.gauge_2.value}
-						type={app.settings.dash_classic.gauge_2.type}
-
-
-						globalRotation={90}
-						size={size * 0.9}
-
-						borderSize={1}
-						borderGap={5}
-
-						progressOffset={-30}
-						progressWidth={5}
-
-						limitOffset={-20}
-						limitWidth={2}
-
-						tickWidth={2}
-						smallTicks={4}
-						heightSmallTicks={3}
-						bigTicks={3}
-						heightBigTicks={10}
-
-						needleOffset={-30}
-						needleWidth={2}
-
-						borderColor={'var(--boxColorDefault)'}
-						backgroundColor={'var(--coldGreyDark)'}
-						progressBackgroundColor={'var(--boxColorLighter)'}
-						progressFillerColor={'var(--themeDefault)'}
-						tickColor={'var(--boxColorLighter)'}
-						limitColor={'var(--themeAccent)'}
-						needleColor={'var(--themeAccent)'}
-						textColor1={'var(--boxColorLighter)'}
-						textColor2={'var(--themeDefault)'}
-						pivotColor={'var(--boxColorDefault)'}
-					/>
-				</div>
-				<div className="column">
+					sensor={app.settings.dash_classic.gauge_2.value}
+					type={app.settings.dash_classic.gauge_2.type}
+					
+				/>
 				<RadialGauge
-						sensor={app.settings.dash_classic.gauge_3.value}
-						type={app.settings.dash_classic.gauge_3.type}
-
-
-						globalRotation={90}
-						size={size * 0.9}
-
-						borderSize={1}
-						borderGap={5}
-
-						progressOffset={-30}
-						progressWidth={5}
-
-						limitOffset={-20}
-						limitWidth={2}
-
-						tickWidth={2}
-						smallTicks={4}
-						heightSmallTicks={3}
-						bigTicks={3}
-						heightBigTicks={10}
-
-						needleOffset={-30}
-						needleWidth={2}
-
-						borderColor={'var(--boxColorDefault)'}
-						backgroundColor={'var(--coldGreyDark)'}
-						progressBackgroundColor={'var(--boxColorLighter)'}
-						progressFillerColor={'var(--themeDefault)'}
-						tickColor={'var(--boxColorLighter)'}
-						limitColor={'var(--themeAccent)'}
-						needleColor={'var(--themeAccent)'}
-						textColor1={'var(--boxColorLighter)'}
-						textColor2={'var(--themeDefault)'}
-						pivotColor={'var(--boxColorDefault)'}
+					sensor={app.settings.dash_classic.gauge_3.value}
+					type={app.settings.dash_classic.gauge_3.type}
+				/>
+				<div style={{ height: '80%' }}>
+					<RadialGauge
+						sensor={app.settings.dash_classic.gauge_4.value}
+						type={app.settings.dash_classic.gauge_4.type}
+						bars={false}
+						showLabels={false}
 					/>
 				</div>
+			</Gauges>
+			<div
+				style={{
+					width: '100%',
+					height: '35%',
 
+					backgroundImage: 'url(/assets/svg/background/glow.svg#glow)', /* Corrected */
+					backgroundSize: 'contain',
+					backgroundRepeat: 'no-repeat',
+					backgroundPosition: 'center',
+				}}>
+				{Databox}
 			</div>
-			<div className="row">
-				<div className="column">
-					<ValueBox
-						sensor={app.settings.dash_classic.value_1.value}
-						type={app.settings.dash_classic.value_1.type}
 
-						unit={true}
-
-						textColorDefault={'var(--textColorDefault)'}
-						valueColor={'var(--themeDefault)'}
-						limitColor={'var(--themeAccent)'}
-						boxColor={'var(--boxColorDarker)'}
-						borderColor={'var(--boxColorDark)'}
-
-						borderWidth={'0px'}
-
-						height={"10vh"}
-						width={"100%"}
-
-						labelSize={`calc(3vmin * ${app.system.textScale}`}
-						valueSize={`calc(5vmin * ${app.system.textScale}`}
-					/>
-				</div>
-				<div className="column">
-				<ValueBox
-						sensor={app.settings.dash_classic.value_2.value}
-						type={app.settings.dash_classic.value_2.type}
-
-						unit={true}
-
-						textColorDefault={'var(--textColorDefault)'}
-						valueColor={'var(--themeDefault)'}
-						limitColor={'var(--themeAccent)'}
-						boxColor={'var(--boxColorDarker)'}
-						borderColor={'var(--boxColorDark)'}
-
-						borderWidth={'0px'}
-
-						height={"10vh"}
-						width={"100%"}
-
-						labelSize={`calc(3vmin * ${app.system.textScale}`}
-						valueSize={`calc(5vmin * ${app.system.textScale}`}
-					/>
-				</div>
-				<div className="column">
-				<ValueBox
-						sensor={app.settings.dash_classic.value_3.value}
-						type={app.settings.dash_classic.value_3.type}
-
-						unit={true}
-
-						textColorDefault={'var(--textColorDefault)'}
-						valueColor={'var(--themeDefault)'}
-						limitColor={'var(--themeAccent)'}
-						boxColor={'var(--boxColorDarker)'}
-						borderColor={'var(--boxColorDark)'}
-
-						borderWidth={'0px'}
-
-						height={"10vh"}
-						width={"100%"}
-
-						labelSize={`calc(3vmin * ${app.system.textScale}`}
-						valueSize={`calc(5vmin * ${app.system.textScale}`}
-					/>
-				</div>
-			</div >
-		</>
+		</Container>
 	)
 };
 

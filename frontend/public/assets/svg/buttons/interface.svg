@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="interface" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 39.31 32">
+  <g id="interface">
+    <g class="cls-1">
+      <path id="Vector_40" class="cls-2" d="M37.81,25.48v-11.71l-.96-2.23M37.81,25.48v5.02h-1.98v-5.02M37.81,25.48h-1.98M1.5,25.48v5.02h1.98v-5.02M1.5,25.48v-11.71l.96-2.23M1.5,25.48h1.98M2.46,11.54L6.78,1.5h25.75l4.32,10.04M2.46,11.54h34.39M35.83,25.48H3.48" />
+      <ellipse id="Ellipse_32" class="cls-2" cx="8.06" cy="18" rx="1.51" ry="1.5" />
+      <ellipse id="Ellipse_33" class="cls-2" cx="31.25" cy="18" rx="1.51" ry="1.5" />
+    </g>
+  </g>
+</svg>

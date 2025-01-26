@@ -1,9 +1,28 @@
+import styled, { useTheme } from 'styled-components';
+import { APP } from '../../store/Store';
+
+const Dots = styled.div`
+  height: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-bottom: 20px;
+`;
+
 const Pagination = ({ pages, colorActive, colorInactive, currentPage, dotSize = 20 }) => {
+    const theme = useTheme()
+
+    const app = APP((state) => state.settings)
+    const themeColor = (app.general.colorTheme.value).toLowerCase()
+
     const circles = [];
 
     for (let i = 0; i < pages; i++) {
         const isActive = i === currentPage;
-        const circleColor = isActive ? colorActive : colorInactive;
+        const circleColor = isActive ? theme.colors.theme[themeColor].active : theme.colors.medium;
 
         circles.push(
             <circle
@@ -20,11 +39,11 @@ const Pagination = ({ pages, colorActive, colorInactive, currentPage, dotSize = 
     const svgHeight = dotSize * 2; // Adjust the height based on circle size
 
     return (
-        <>
+        <Dots>
             <svg width={svgWidth} height={svgHeight}>
                 {circles}
             </svg>
-        </>
+        </Dots>
     );
 };
 
