@@ -22,7 +22,7 @@ const Gauges = styled.div`
 
 
   width: 100%;
-  height: 70%;
+  height: 60%;
 
   background-image: url(/assets/svg/background/horizon.svg#horizon);
   background-size: cover;
@@ -61,27 +61,29 @@ const Classic = () => {
 	return (
 		<Container>
 			<Gauges ref={containerRef}>
-				<div style={{ height: '65%' }}>
+				<div style={{ height: '80%' }}>
 					<RadialGauge
-						sensor={app.settings.dash_classic.gauge_2.value}
-						type={app.settings.dash_classic.gauge_2.type}
+						sensor={app.settings.dash_classic.gauge_1.value}
+						type={app.settings.dash_classic.gauge_1.type}
 						bars={false}
+						showLabels={false}
 					/>
 				</div>
 				<RadialGauge
-					sensor={app.settings.dash_classic.gauge_1.value}
-					type={app.settings.dash_classic.gauge_1.type}
+					sensor={app.settings.dash_classic.gauge_2.value}
+					type={app.settings.dash_classic.gauge_2.type}
 					
 				/>
 				<RadialGauge
-					sensor={app.settings.dash_classic.gauge_2.value}
-					type={app.settings.dash_classic.gauge_2.type}
+					sensor={app.settings.dash_classic.gauge_3.value}
+					type={app.settings.dash_classic.gauge_3.type}
 				/>
-				<div style={{ height: '65%' }}>
+				<div style={{ height: '80%' }}>
 					<RadialGauge
-						sensor={app.settings.dash_classic.gauge_2.value}
-						type={app.settings.dash_classic.gauge_2.type}
+						sensor={app.settings.dash_classic.gauge_4.value}
+						type={app.settings.dash_classic.gauge_4.type}
 						bars={false}
+						showLabels={false}
 					/>
 				</div>
 			</Gauges>

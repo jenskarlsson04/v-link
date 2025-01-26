@@ -47,6 +47,8 @@ const SideBar = ({ collapseLength }) => {
 
     const app = APP((state) => state)
     const theme = useTheme();
+    const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
+
 
     const [moose, setMoose] = useState(false);
 
@@ -78,10 +80,19 @@ const SideBar = ({ collapseLength }) => {
             maxWidth={app.settings.side_bars.sideBarWidth.value}>
             <Menu>
                 <Title>SETTINGS</Title>
-                <Link onClick={() => handleTabChange(1)} isActive={currentTab === 1} >
+                <Link
+                    onClick={() => handleTabChange(1)}
+                    isActive={currentTab === 1}
+                    activeColor={theme.colors.theme[themeColor].default}
+                    inactiveColor={theme.colors.light}>
                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', width: '100%' }}>
-                            <IconMedium isActive={currentTab === 1} theme={theme}>
+                            <IconMedium
+                                isActive={currentTab === 1}
+                                theme={theme}
+                                activeColor={theme.colors.theme[themeColor].active}
+                                defaultColor={theme.colors.theme[themeColor].default}
+                                inactiveColor={theme.colors.medium}>
                                 <use xlinkHref={`/assets/svg/buttons/general.svg#general`}></use>
                             </IconMedium>
                             GENERAL
@@ -89,10 +100,19 @@ const SideBar = ({ collapseLength }) => {
                     </div>
                 </Link>
 
-                <Link onClick={() => handleTabChange(2)} isActive={currentTab === 2} >
+                <Link
+                    onClick={() => handleTabChange(2)}
+                    isActive={currentTab === 2}
+                    activeColor={theme.colors.theme[themeColor].default}
+                    inactiveColor={theme.colors.light}>
                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', width: '100%' }}>
-                            <IconMedium isActive={currentTab === 2} theme={theme}>
+                            <IconMedium
+                                isActive={currentTab === 2}
+                                theme={theme}
+                                activeColor={theme.colors.theme[themeColor].active}
+                                defaultColor={theme.colors.theme[themeColor].default}
+                                inactiveColor={theme.colors.medium}>
                                 <use xlinkHref={`/assets/svg/buttons/interface.svg#interface`}></use>
                             </IconMedium>
                             INTERFACE
@@ -100,10 +120,19 @@ const SideBar = ({ collapseLength }) => {
                     </div>
                 </Link>
 
-                <Link onClick={() => handleTabChange(3)} isActive={currentTab === 3} >
+                <Link
+                    onClick={() => handleTabChange(3)}
+                    isActive={currentTab === 3}
+                    activeColor={theme.colors.theme[themeColor].default}
+                    inactiveColor={theme.colors.light}>
                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', width: '100%' }}>
-                            <IconMedium isActive={currentTab === 3} theme={theme}>
+                            <IconMedium
+                                isActive={currentTab === 3}
+                                theme={theme}
+                                activeColor={theme.colors.theme[themeColor].active}
+                                defaultColor={theme.colors.theme[themeColor].default}
+                                inactiveColor={theme.colors.medium}>
                                 <use xlinkHref={`/assets/svg/buttons/keymap.svg#keymap`}></use>
                             </IconMedium>
                             KEYMAP
@@ -112,10 +141,19 @@ const SideBar = ({ collapseLength }) => {
 
                 </Link>
 
-                <Link onClick={() => handleTabChange(4)} isActive={currentTab === 4}>
+                <Link
+                    onClick={() => handleTabChange(4)}
+                    isActive={currentTab === 4}
+                    activeColor={theme.colors.theme[themeColor].default}
+                    inactiveColor={theme.colors.light}>
                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'left' }}>
                         <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', width: '100%' }}>
-                            <IconMedium isActive={currentTab === 4} theme={theme}>
+                            <IconMedium
+                                isActive={currentTab === 4}
+                                theme={theme}
+                                activeColor={theme.colors.theme[themeColor].active}
+                                defaultColor={theme.colors.theme[themeColor].default}
+                                inactiveColor={theme.colors.medium}>
                                 <use xlinkHref={`/assets/svg/buttons/system.svg#system`}></use>
                             </IconMedium>
                             SYSTEM
@@ -124,27 +162,27 @@ const SideBar = ({ collapseLength }) => {
                 </Link>
 
 
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'left', height: theme.interaction.buttonHeight}}>
-                        <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '5px' }}>
-                            <Link
-                                /* 
-                                openModal(
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <h1>You found the Turbo-Button!</h1>
-                                        <p>Sadly, it doesn't do anything.</p>
-                                    </div>
-                                )
-                                */
-                                onClick={() => setMoose(true)}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'left', height: theme.interaction.buttonHeight }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '5px' }}>
+                        <Link
+                            /* 
+                            openModal(
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <h1>You found the Turbo-Button!</h1>
+                                    <p>Sadly, it doesn't do anything.</p>
+                                </div>
+                            )
+                            */
+                            onClick={() => setMoose(true)}>
 
-                                <IconMedium theme={theme} style={{ fill: 'none', stroke: moose ? theme.colors.theme.blue.active : 'none'}} onClick={() => setMoose(!moose)}>
-                                    <use xlinkHref={`/assets/svg/moose.svg#moose`}></use>
-                                </IconMedium>
+                            <IconMedium theme={theme} style={{ fill: 'none', stroke: moose ? theme.colors.theme[themeColor].active : 'none' }} onClick={() => setMoose(!moose)}>
+                                <use xlinkHref={`/assets/svg/moose.svg#moose`}></use>
+                            </IconMedium>
 
-                            </Link>
-                            <Caption1 style={{ color: theme.colors.light }}> v2.2.1</Caption1>
-                        </div>
+                        </Link>
+                        <Caption1 style={{ color: theme.colors.light }}> v2.2.1</Caption1>
                     </div>
+                </div>
 
             </Menu>
         </Sidebar>

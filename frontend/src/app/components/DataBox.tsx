@@ -3,7 +3,7 @@ import styled, { useTheme } from 'styled-components';
 
 import { DATA, APP } from '../../store/Store';
 import { Typography } from '../../theme/styles/Typography';
-import { IconLarge, CustomIcon } from '../../theme/styles/Icons';
+import { CustomIcon } from '../../theme/styles/Icons';
 
 const Container = styled.div`
   width: 100%;
@@ -34,7 +34,7 @@ const Icons = styled.div`
   flex 1;
 
   display: flex;
-  gap: calc(30% - 15px);   // FIX THIS!!!!!!!!!!!!!!
+  gap: 200px;
 
   justify-content: center;
   align-items: center;
@@ -54,7 +54,7 @@ const Svg = styled.svg`
   height: 100%;
 `;
 
-const DataBox = (dashPage) => {
+const DataBox = () => {
     const theme = useTheme();
 
     const app = APP((state) => state)
@@ -62,26 +62,13 @@ const DataBox = (dashPage) => {
     const modules = APP((state) => state.modules);
     const settings = APP((state) => state.settings.dash_classic);
 
+    const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
+
     const padding = 20; // Padding for the rect size
     const containerRef = useRef(null);
 
-    const [scale, setScale] = useState({ x: 1, y: 1 });
-    const [viewBox, setViewBox] = useState({ minX: 0, minY: 0, width: 0, height: 0 });
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-
     const { width, height } = dimensions;
-
-
-    /* Update scale factors whenever the dimensions or viewBox changes. */
-    useEffect(() => {
-        if (viewBox.width && viewBox.height && width && height) {
-            console.log("useEffect1: ", width, height)
-            setScale({
-                x: (width - padding * 2) / viewBox.width,
-                y: (height - padding * 2) / viewBox.height,
-            });
-        }
-    }, [width, height, viewBox]);
 
     /* Observe container resizing and update dimensions. */
     useEffect(() => {
@@ -102,16 +89,15 @@ const DataBox = (dashPage) => {
     const leftName = settings.value_1.value
     const leftType = settings.value_1.type
     const leftID = modules[leftType]((state) => state.settings.sensors[leftName].app_id)
+    const leftData = data[leftName]
+    const leftLimit = modules[leftType]((state) => state.settings.sensors[leftName].limit_start)
 
     const rightName = settings.value_2.value
     const rightType = settings.value_2.type
     const rightID = modules[rightType]((state) => state.settings.sensors[rightName].app_id)
+    const rightData = data[rightName]
+    const rightLimit = modules[rightType]((state) => state.settings.sensors[rightName].limit_start)
 
-
-
-    //const maxValue = modules[progressType]((state) => state.settings.sensors[progressName].max_value)
-    //const limitStart = modules[progressType]((state) => state.settings.sensors[progressName].limit_start)
-    //const minValue = modules[progressType]((state) => state.settings.sensors[progressName].min_value)
 
     const [customMsg, setCustomMsg] = useState('No Messages')
     const [toggle, setToggle] = useState(false)
@@ -164,13 +150,25 @@ const DataBox = (dashPage) => {
     return (
         <Container>
             <Icons>
-                <CustomIcon color={theme.colors.light} stroke={2} size={'25px'}>
+                <CustomIcon
+                    stroke={2}
+                    size={'25px'}
+                    isActive={leftData > leftLimit}
+                    activeColor={theme.colors.theme[themeColor].highlightDark}
+                    defaultColor={theme.colors.light}
+                    inactiveColor={theme.colors.medium}>
                     <use xlinkHref={`/assets/svg/icons/bold/${leftID}_bold.svg#${leftID}`}></use>
                 </CustomIcon>
                 <CustomIcon color={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium} stroke={2} size={'40px'}>
                     <use xlinkHref={`/assets/svg/icons/bold/${'err_bold'}.svg#${'err'}`}></use>
                 </CustomIcon>
-                <CustomIcon color={theme.colors.light} stroke={2} size={'25px'}>
+                <CustomIcon
+                    stroke={2}
+                    size={'25px'}
+                    isActive={rightData > rightLimit}
+                    activeColor={theme.colors.theme[themeColor].highlightDark}
+                    defaultColor={theme.colors.light}
+                    inactiveColor={theme.colors.medium}>
                     <use xlinkHref={`/assets/svg/icons/bold/${rightID}_bold.svg#${rightID}`}></use>
                 </CustomIcon>
             </Icons>

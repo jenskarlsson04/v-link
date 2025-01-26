@@ -20,7 +20,6 @@ const Gauge = styled.div`
 `;
 
 const List = styled.div`
-  height: 40%;
   width: 100%;
   gap: 20px;
 `;

@@ -135,7 +135,7 @@
             "refresh_rate": "high",
             "scale": "((value * 16.0) / 65536.0)",
             "label": "Lambda 1",
-            "unit": "",
+            "unit": "λ",
             "min_value": 0,
             "max_value": 2,
             "limit_start": 2

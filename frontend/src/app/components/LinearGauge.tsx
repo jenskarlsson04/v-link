@@ -75,9 +75,12 @@ const LinearGauge = () => {
     const theme = useTheme();
     const containerRef = useRef(null);
 
+    const app = APP((state) => state);
     const modules = APP((state) => state.modules);
-    const settings = APP((state) => state.settings.dash_race);
+    const settings = app.settings.dash_race;
     const data = DATA((state) => state.data);
+
+    const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
 
     // Load data
     const progressName = settings.gauge_1.value
@@ -189,38 +192,41 @@ const LinearGauge = () => {
     const calculateMarkerPositions = (markerEnd) => {
         const numIntervals = calculateIntervals(markerEnd);
         const positions = [];
-
+    
         if (spline) {
             const pathLength = spline.getTotalLength();
             const limitLength = pathLength * (markerEnd / maxValue);
-            const intervalLength = limitLength / (numIntervals - 1);
-
+            const intervalLength = numIntervals > 1 ? limitLength / (numIntervals - 1) : limitLength;
+    
             for (let i = 0; i < numIntervals; i++) {
                 const lengthAtInterval = intervalLength * i;
-                const point = spline.getPointAtLength(lengthAtInterval);
-
-                const adjustedPoint = reverseMarkers
-                    ? spline.getPointAtLength(pathLength - lengthAtInterval)
-                    : point;
-
+                let adjustedPoint;
+    
+                if (reverseMarkers) {
+                    adjustedPoint = spline.getPointAtLength(pathLength - lengthAtInterval);
+                } else {
+                    adjustedPoint = spline.getPointAtLength(lengthAtInterval);
+                }
+    
                 positions.push(adjustedPoint);
             }
         }
-
+    
         return positions;
     };
+    
 
     /* Render a gradient for either the spline or bar. */
     const gradientDefault = (id, adjustedX) => (
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop
                 offset="0%"
-                stopColor={theme.colors.theme.blue.default}
+                stopColor={theme.colors.theme[themeColor].default}
                 stopOpacity="1"
             />
             <stop
                 offset={`${((adjustedX - 1) / (width - padding * 2)) * 100}%`}
-                stopColor={theme.colors.theme.blue.default}
+                stopColor={theme.colors.theme[themeColor].default}
                 stopOpacity="1"
             />
             <stop
@@ -236,12 +242,12 @@ const LinearGauge = () => {
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop
                 offset="0%"
-                stopColor={theme.colors.theme.blue.active}
+                stopColor={theme.colors.theme[themeColor].active}
                 stopOpacity="1"
             />
             <stop
                 offset={`${((adjustedX - 1) / (width - padding * 2)) * 100}%`}
-                stopColor={theme.colors.theme.blue.active}
+                stopColor={theme.colors.theme[themeColor].active}
                 stopOpacity="1"
             />
             <stop
@@ -257,17 +263,17 @@ const LinearGauge = () => {
         <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop
                 offset="0%"
-                stopColor={theme.colors.theme.blue.default}
+                stopColor={theme.colors.theme[themeColor].default}
                 stopOpacity="1"
             />
             <stop
                 offset={`${((adjustedX - 30) / (width - padding * 2)) * 100}%`}
-                stopColor={theme.colors.theme.blue.active}
+                stopColor={theme.colors.theme[themeColor].active}
                 stopOpacity="1"
             />
             <stop
                 offset={`${((adjustedX - 15) / (width - padding * 2)) * 100}%`}
-                stopColor={theme.colors.theme.blue.active}
+                stopColor={theme.colors.theme[themeColor].active}
                 stopOpacity="1"
             />
             <stop
@@ -313,31 +319,7 @@ const LinearGauge = () => {
         </linearGradient>
     );
 
-    /* Render the spline with its gradient. */
-    const renderSpline = () => {
-        if (spline) {
-            const splinePath = spline.getAttribute('d');
-            const markerPositions = calculateMarkerPositions(maxValue);
-            const lastMarkerPosition = markerPositions[markerPositions.length - 1];
 
-            const adjustedX = lastMarkerPosition.x;
-
-            return (
-                <>
-                    <defs>
-                        {gradientLight('splineGradient', adjustedX)}
-                    </defs>
-                    <path
-                        d={splinePath}
-                        fill="none"
-                        stroke="url(#splineGradient)"
-                        strokeWidth="6"
-                        transform={`translate(${padding}, ${padding}) scale(${scale.x}, ${scale.y})`}
-                    />
-                </>
-            );
-        }
-    };
 
     /* Render the bar with its gradient. */
     const renderBar = () => {
@@ -346,7 +328,7 @@ const LinearGauge = () => {
             const markerPositions = calculateMarkerPositions(limitStart);
             const lastMarkerPosition = markerPositions[markerPositions.length - 1];
 
-            const adjustedX = lastMarkerPosition.x;
+            const adjustedX = lastMarkerPosition.x * scale.x;
 
             return (
                 <>
@@ -381,11 +363,11 @@ const LinearGauge = () => {
             return (
                 <line
                     key={index}
-                    x1={startX + 3}
+                    x1={startX}
                     y1={startY - 2}
-                    x2={startX + 3}
+                    x2={startX}
                     y2={endY}
-                    stroke={theme.colors.theme.blue.active}
+                    stroke={theme.colors.theme[themeColor].active}
                     strokeWidth="8"
                 />
             );
@@ -405,7 +387,7 @@ const LinearGauge = () => {
 
             return (
                 <text
-                    x={labelX + 3} // Adjust position slightly for padding
+                    x={labelX}
                     y={labelY + 30} // Position text slightly above the marker
                     fontSize="12"
                     fontFamily="Arial, sans-serif"
@@ -447,6 +429,33 @@ const LinearGauge = () => {
         );
     };
 
+    /* Render the spline with its gradient. */
+    const renderSpline = () => {
+        if (spline) {
+
+            const splinePath = spline.getAttribute('d');
+            const markerPositions = calculateMarkerPositions(maxValue);
+            const lastMarkerPosition = markerPositions[markerPositions.length - 1];
+
+            const adjustedX = padding + lastMarkerPosition.x * scale.x;
+
+            return (
+                <>
+                    <defs>
+                        {gradientLight('splineGradient', adjustedX)}
+                    </defs>
+                    <path
+                        d={splinePath}
+                        fill="none"
+                        stroke="url(#splineGradient)"
+                        strokeWidth="6"
+                        transform={`translate(${padding}, ${padding}) scale(${scale.x}, ${scale.y})`}
+                    />
+                </>
+            );
+        }
+    };
+
 
     /* Render the spline with its gradient. */
     /* Render the limit with its gradient for the spline. */
@@ -464,14 +473,13 @@ const LinearGauge = () => {
             const pathLength = spline.getTotalLength();
 
             // Now calculate the adjusted position based on the reverseMarkers flag
-            let adjustedX = lastMarkerPosition.x;
-
+            let adjustedX = lastMarkerPosition.x * scale.x;
 
             // Render the path with the gradient applied
             return (
                 <>
                     <defs>
-                        {gradientLimit('limitRedline', adjustedX, 1000, theme.colors.theme.blue.highlightDark)}
+                        {gradientLimit('limitRedline', adjustedX, 1000, theme.colors.theme[themeColor].highlightDark)}
                     </defs>
                     <path
                         d={splinePath}

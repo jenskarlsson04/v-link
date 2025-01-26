@@ -65,6 +65,8 @@ const Container = styled.div`
 function Carplay() {
     const app = APP((state) => state);
     const theme = useTheme();
+    const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
+    
     const Body2 = Typography.Body2;
 
     const [isActive, setIsActive] = useState(false);
@@ -163,8 +165,8 @@ function Carplay() {
                         app.system.carplay.paired && app.system.carplay.dongle
                             ? app.system.carplay.phone
                                 ? app.system.carplay.worker
-                                    ? theme.colors.theme.blue.active
-                                    : theme.colors.theme.blue.default
+                                    ? theme.colors.theme[themeColor].active
+                                    : theme.colors.theme[themeColor].default
                                 : theme.colors.medium
                             : theme.colors.medium
                     }
@@ -172,8 +174,8 @@ function Carplay() {
                         app.system.carplay.paired && app.system.carplay.dongle
                             ? app.system.carplay.phone
                                 ? app.system.carplay.worker
-                                    ? theme.colors.theme.blue.active
-                                    : theme.colors.theme.blue.default
+                                    ? theme.colors.theme[themeColor].active
+                                    : theme.colors.theme[themeColor].default
                                 : theme.colors.medium
                             : theme.colors.medium
                     }

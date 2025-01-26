@@ -45,9 +45,11 @@ export const theme = {
 
     theme: {
       green: {
-        default: '#3C729E',
-        active: '#A7CEEE',
-        navGlow: '0 0 20px rgba(165, 205, 237, 1)', // Define your glow here
+        default: '#5acc5a',
+        active: '#aaeeaa',
+        navGlow: '0 0 20px rgba(90, 204, 90, 1)', // Define your glow here
+        highlightDark: '#9E3C3C',
+        highlightLight: '#FF0000',
       },
   
       blue: {

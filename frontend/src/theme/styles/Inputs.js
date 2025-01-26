@@ -4,7 +4,7 @@ export const Link = styled.button`
     height: ${({ theme }) => theme.interaction.buttonHeight};
     width: 100%;
 
-    color: ${({ theme, isActive }) => isActive ? theme.colors.theme.blue.active :theme.colors.text};
+    color: ${({ theme, isActive, activeColor, inactiveColor }) => isActive ? activeColor : inactiveColor};
     font-size: ${({ theme }) => theme.typography.caption1.fontSize};
     
     display: flex;
@@ -65,7 +65,7 @@ export const ToggleSwitch = styled.label`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: ${({ theme }) => theme.colors.medium}; /* Start as primary */
+    background-color: ${({ backgroundColor }) => backgroundColor}; /* Start as primary */
     border-radius: 10px;
     transition: background-color 0.2s ease;
   }
@@ -78,7 +78,7 @@ export const ToggleSwitch = styled.label`
     width: 16px;
     left: 3px;
     bottom: 2px;
-    background-color: ${({ theme }) => theme.colors.theme.blue.default}; /* Start as default */
+    background-color: ${({ defaultColor }) => defaultColor}; /* Start as default */
     border-radius: 50%;
     transition: transform 0.2s ease, background-color 0.2s ease; /* Smooth transitions for position and color */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -86,12 +86,12 @@ export const ToggleSwitch = styled.label`
 
   /* When the input is checked, update styles */
   input:checked + .slider {
-    background-color: ${({ theme }) => theme.colors.theme.blue.default}; /* Change to default */
+    background-color: ${({ defaultColor }) => defaultColor}; /* Change to default */
   }
 
   input:checked + .slider:before {
     transform: translateX(28px); /* Move the circle to the right */
-    background-color: ${({ theme }) => theme.colors.theme.blue.active}; /* Change to active */
+    background-color: ${({ activeColor }) =>activeColor}; /* Change to active */
   }
 `;
 

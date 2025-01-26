@@ -59,6 +59,10 @@ const DataChart = ({
     const settings = APP((state) => state.settings);
     const data = DATA((state) => state.data);
 
+    const app = APP((state) => state.settings)
+    const themeColor = (app.general.colorTheme.value).toLowerCase()
+
+
     const containerRef = useRef(null);  // Create a reference for the container
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const { width, height } = dimensions;
@@ -111,7 +115,7 @@ const DataChart = ({
     const [isRecording, setIsRecording] = useState(false); // State to toggle recording
 
     const generateColors = () => {
-        const baseColor = theme.colors.theme.blue.default.replace(/#/g, '');
+        const baseColor = theme.colors.theme[themeColor].default.replace(/#/g, '');
         const hsbColor = convert.hex.hsv(baseColor);
         return datasets.map((_, i) => {
             const hue = (hsbColor[0] + i * 10) % 360;

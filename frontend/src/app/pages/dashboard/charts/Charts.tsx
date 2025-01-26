@@ -16,11 +16,12 @@ const Container = styled.div`
 `;
 
 const Chart = styled.div`
-  height: 50%;
+  display: flex;
+  height: 60%;
 `;
 
 const List = styled.div`
-  height: 50%;
+  display: flex;
   gap: 20px;
 `;
 

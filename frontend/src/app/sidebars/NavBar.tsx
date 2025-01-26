@@ -35,7 +35,7 @@ const NavButton = styled.button`
 const Indicator = styled.div`
     position: absolute;
     bottom: 0;
-    z-index: 1;
+    z-index: 3;
 
     display: ${({ isActive }) => `${isActive ? 'none' : 'flex'}`};
     justify-content: center;
@@ -49,8 +49,8 @@ const Indicator = styled.div`
 
 const Blob = styled.div`
     width: 100px;
-    height: 5px;
-    background: ${({ theme, isHovering }) => `${isHovering ? theme.colors.theme.blue.active : theme.colors.medium}`};
+    height: 3px;
+    background: ${({ theme, themeColor, isHovering }) => `${isHovering ? theme.colors.theme[themeColor].active : theme.colors.medium}`};
     
     border-radius: 2.5px;
     border: none;
@@ -59,15 +59,21 @@ const Blob = styled.div`
     transition: background 0.4s ease-in-out;
 `;
 
+
 const NavBar = ({ isHovering }) => {
   const app = APP((state) => state);
   const theme = useTheme();
+  const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
+
+  const handleClick = () => {
+    app.update((state) => { state.system.interface.navBar = true })
+  }
 
   return (
     <>
       <Indicator isActive={app.system.interface.navBar}>
-        <GlowLarge color={theme.colors.theme.blue.active} opacity={isHovering ? 0.75 : 0}>
-          <Blob theme={theme} isActive={app.system.interface.navBar} isHovering={isHovering}/>
+        <GlowLarge color={theme.colors.theme[themeColor].active} opacity={isHovering ? 0.75 : 0}>
+          <Blob theme={theme} isActive={app.system.interface.navBar} isHovering={isHovering} themeColor={themeColor} onClick={handleClick}/>
         </GlowLarge>
       </Indicator>
       <Navbar app={app} theme={theme} isActive={app.system.interface.navBar}>
@@ -75,9 +81,14 @@ const NavBar = ({ isHovering }) => {
           <div className="column" key={view} style={{ position: 'relative' }}>
             <NavButton onClick={() => {
               console.log('click, ', view)
-              app.update((state) => {state.system.view = view })
-              }}>
-              <IconNav isActive={app.system.view === view}>
+              app.update((state) => { state.system.view = view })
+            }}>
+              <IconNav
+                theme={theme}
+                isActive={app.system.view === view}
+                activeColor={theme.colors.theme[themeColor].active}
+                defaultColor={theme.colors.medium}
+                inactiveColor={theme.colors.medium}>
                 <use xlinkHref={`/assets/svg/buttons/${view.toLowerCase()}.svg#${view.toLowerCase()}`}></use>
               </IconNav>
             </NavButton>

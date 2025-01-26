@@ -117,17 +117,22 @@
 
     "gauge_1": {
       "type": "can",
-      "value": "intake",
+      "value": "boost",
       "label": "Gauge 1"
     },
     "gauge_2": {
       "type": "can",
-      "value": "boost",
+      "value": "speed",
       "label": "Gauge 2"
     },
     "gauge_3": {
       "type": "can",
-      "value": "coolant",
+      "value": "rpm",
+      "label": "Gauge 3"
+    },
+    "gauge_4": {
+      "type": "can",
+      "value": "lambda1",
       "label": "Gauge 3"
     },
     "value_1": {
@@ -136,8 +141,8 @@
       "label": "Bottom Left"
     },
     "value_2": {
-      "type": "can",
-      "value": "boost",
+      "type": "adc",
+      "value": "pressure",
       "label": "Bottom Right"
     }
   },

@@ -90,6 +90,7 @@ const Settings = () => {
   const system = app.system;
 
   const theme = useTheme();
+  const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
 
   /* Create combined data store for dropdown */
   const dataStores = {}
@@ -291,8 +292,8 @@ const Settings = () => {
         : (content.options || Object.keys(dataOptions).map((key) =>               //No?  Create dropdown from options
           key
         ))
-        console.log(content.options, dataOptions)
-        console.log(dropdown)
+      console.log(content.options, dataOptions)
+      console.log(dropdown)
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
@@ -349,7 +350,7 @@ const Settings = () => {
           <Divider />
           <Spacer>
             {dropdown
-            ? (<Select
+              ? (<Select
                 name={setting}
                 isActive={true}
                 textSize={theme.typography.caption2.fontSize}
@@ -363,17 +364,21 @@ const Settings = () => {
                   </option>
                 ))}
               </Select>)
-            : (isBoolean
-              ? (<ToggleSwitch>
+              : (isBoolean
+                ? (<ToggleSwitch
+                    theme={theme}
+                    backgroundColor={theme.colors.medium}
+                    defaultColor={theme.colors.theme[themeColor].default}
+                    activeColor={theme.colors.theme[themeColor].active}>
                   <input type="checkbox" name={setting} checked={value} onChange={handleChange} />
                   <span className="slider"></span>
                 </ToggleSwitch>)
-              : isBinding
-                ? ( <Button name={setting} onClick={() => { handleBinding(key, setting) }}>
+                : isBinding
+                  ? (<Button name={setting} onClick={() => { handleBinding(key, setting) }}>
                     {value}
                   </Button>)
-                :  <Input name={setting} type={isText ? 'text' : 'number'} value={value} onChange={handleChange} />
-            )}
+                  : <Input name={setting} type={isText ? 'text' : 'number'} value={value} onChange={handleChange} />
+              )}
           </Spacer>
         </Element>
       );
@@ -411,7 +416,11 @@ const Settings = () => {
             <Element>
               <Caption2>{`CAN ${system.canState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
-              <ToggleSwitch>
+              <ToggleSwitch
+                    theme={theme}
+                    backgroundColor={theme.colors.medium}
+                    defaultColor={theme.colors.theme[themeColor].default}
+                    activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.canState} onChange={() => { handleIO("can", canChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -420,7 +429,11 @@ const Settings = () => {
             <Element>
               <Caption2>{`LIN ${system.linState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
-              <ToggleSwitch>
+              <ToggleSwitch
+                    theme={theme}
+                    backgroundColor={theme.colors.medium}
+                    defaultColor={theme.colors.theme[themeColor].default}
+                    activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.linState} onChange={() => { handleIO("lin", linChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -429,7 +442,11 @@ const Settings = () => {
             <Element>
               <Caption2>{`ADC ${system.adcState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
-              <ToggleSwitch>
+              <ToggleSwitch
+                    theme={theme}
+                    backgroundColor={theme.colors.medium}
+                    defaultColor={theme.colors.theme[themeColor].default}
+                    activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.adcState} onChange={() => { handleIO("adc", adcChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -438,7 +455,11 @@ const Settings = () => {
             <Element>
               <Caption2>{`RTI ${system.rtiState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
-              <ToggleSwitch>
+              <ToggleSwitch
+                    theme={theme}
+                    backgroundColor={theme.colors.medium}
+                    defaultColor={theme.colors.theme[themeColor].default}
+                    activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.rtiState} onChange={() => { handleIO("rti", rtiChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>

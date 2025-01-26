@@ -26,9 +26,11 @@ const calculateIncrement = (value) => {
     // Determine step size based on the magnitude of the value
     if (value <= 30) {
         return 1; // Steps of 1 for values below 10
-    } else if (value > 30 && value < 200) {
+    } else if (value > 30 && value < 100) {
         return 10; // Steps of 10 for values between 10 and 200
-    } else if (value >= 200 && value < 1000) {
+    } else if (value >= 100 && value < 500) {
+        return 20; // Steps of 100 for values between 200 and 1000
+    } else if (value >= 500 && value < 1000) {
         return 100; // Steps of 100 for values between 200 and 1000
     } else if (value >= 1000 && value < 10000) {
         return 1000; // Steps of 1000 for values between 1000 and 10000
@@ -48,8 +50,10 @@ const Container = styled.div`
     border-radius: 7px;
     overflow: hidden;
     align-self: flex-start;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
+    padding-top: 10px;
+    box-sizing: border-box;
 `;
 
 export const RadialGauge = ({
@@ -75,11 +79,8 @@ export const RadialGauge = ({
     const minValue = settings.min_value
     const limitStart = settings.limit_start
 
-    const borderColor = 'black'
-    const backgroundColor = 'black'
-    const progressBackgroundColor = 'grey'
-    const textColor1 = 'grey'
-    const textColor2 = 'white'
+    const app = APP((state) => state.settings)
+    const themeColor = (app.general.colorTheme.value).toLowerCase()
 
 
     /* Update scale factors whenever the dimensions or viewBox changes. */
@@ -198,7 +199,7 @@ export const RadialGauge = ({
         // Now, create a color scale where the lightest color corresponds to the progressArc position
         const colorScale = d3.scaleLinear()
             .domain([0, lightestPosition, totalMarkers - 1])  // Domain from start, progress arc, to end
-            .range([theme.colors.theme.blue.default, ( data[sensor] > limitStart ? theme.colors.theme.blue.highlightLight : theme.colors.theme.blue.active)]);  // Dark to active to light
+            .range([theme.colors.theme[themeColor].default, (data[sensor] > limitStart ? theme.colors.theme[themeColor].highlightLight : theme.colors.theme[themeColor].active)]);  // Dark to active to light
 
         const color = colorScale(index);  // Get color based on the index
 
@@ -276,10 +277,10 @@ export const RadialGauge = ({
                 .attr("y2", "0%")
                 .append("stop")
                 .attr("offset", "0%")
-                .attr("stop-color", theme.colors.theme.blue.default)  // Starting color
+                .attr("stop-color", theme.colors.theme[themeColor].default)  // Starting color
                 .append("stop")
                 .attr("offset", "100%")
-                .attr("stop-color", theme.colors.theme.blue.light); // Ending color
+                .attr("stop-color", theme.colors.theme[themeColor].light); // Ending color
 
             // Add the main arc as background
             svg
@@ -305,7 +306,7 @@ export const RadialGauge = ({
                 .attr("class", "limitArc")
                 .attr("d", generateArc(mainArc, limitArc, outlineRadius, 0, limitArc, mainArc))
                 .attr("fill", "none")
-                .attr("stroke", theme.colors.theme.blue.highlightDark)
+                .attr("stroke", theme.colors.theme[themeColor].highlightDark)
                 .attr("stroke-width", 3);
 
             const progressCount = 140 // Total number of markers
@@ -371,41 +372,44 @@ export const RadialGauge = ({
             // Add text labels
             const labels = svg.selectAll(".label").data(generateTextLabels());
 
-            // Remove old labels
-            labels.exit().remove();
 
-            // Add new labels
-            const labelEnter = labels
-            .enter()
-            .append("text")
-            .attr("class", "label")
-            .attr("fill", theme.colors.light)
-            .attr("font-size", (0.5 / 10) * dimensions.height) // Increased font size for visibility
-            .attr("text-anchor", "middle")
-            .attr("dominant-baseline", "middle")
-            .attr("opacity", 1) // Ensure visibility
-            .text((d) => {
-                // Check if labelValue is above 4 digits
-                const value = d.labelValue;
-                if (value.toString().length > 3) {
-                    return value.toString()[0]; // Take only the first digit
-                }
-                return value; // Otherwise, keep the original value
-            });
+            if (showLabels) {
+                // Remove old labels
+                labels.exit().remove();
 
-            // Animate the position of the labels
-            labelEnter
-                .attr("x", (d) => d.x)
-                .attr("y", (d) => d.y)
-                .transition()
-                .duration(1000) // Transition duration for smooth update
-                .attr("x", (d) => d.x)
-                .attr("y", (d) => d.y);
+                // Add new labels
+                const labelEnter = labels
+                    .enter()
+                    .append("text")
+                    .attr("class", "label")
+                    .attr("fill", theme.colors.light)
+                    .attr("font-size", (0.5 / 10) * dimensions.height) // Increased font size for visibility
+                    .attr("text-anchor", "middle")
+                    .attr("dominant-baseline", "middle")
+                    .attr("opacity", 1) // Ensure visibility
+                    .text((d) => {
+                        // Check if labelValue is above 4 digits
+                        const value = d.labelValue;
+                        if (value.toString().length > 3) {
+                            return value.toString()[0]; // Take only the first digit
+                        }
+                        return value; // Otherwise, keep the original value
+                    });
+
+                // Animate the position of the labels
+                labelEnter
+                    .attr("x", (d) => d.x)
+                    .attr("y", (d) => d.y)
+                    .transition()
+                    .duration(1000) // Transition duration for smooth update
+                    .attr("x", (d) => d.x)
+                    .attr("y", (d) => d.y);
+            }
 
             // Add unit label
             svg.append("text")
                 .attr("class", "valueLabel")
-                .attr("fill", textColor1)
+                .attr("fill", theme.colors.light)
                 .attr("font-size", (0.75 / 10) * dimensions.height)
                 .attr("x", "50%")
                 .attr("y", "52%")
@@ -416,13 +420,14 @@ export const RadialGauge = ({
             // Add value label
             svg.append("text")
                 .attr("class", "valueLabel")
-                .attr("fill", textColor2)
+                .attr("fill", theme.colors.light)
                 .attr("font-size", (1.2 / 10) * dimensions.height)
                 .attr("x", "50%")
                 .attr("y", "42%")
                 .attr("dy", "20px")
                 .attr("text-anchor", "middle")
                 .text(data[sensor]);
+
         }
     }, [dimensions, progressArc, bars]); // Re-run whenever progressArc, dimensions, or bars change
 
