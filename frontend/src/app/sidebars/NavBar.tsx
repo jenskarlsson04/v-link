@@ -24,6 +24,7 @@ const Navbar = styled.div`
 `;
 
 const NavButton = styled.button`
+    width: 100%;
     background: none;
     border: none;
 
@@ -73,12 +74,12 @@ const NavBar = ({ isHovering }) => {
     <>
       <Indicator isActive={app.system.interface.navBar}>
         <GlowLarge color={theme.colors.theme[themeColor].active} opacity={isHovering ? 0.75 : 0}>
-          <Blob theme={theme} isActive={app.system.interface.navBar} isHovering={isHovering} themeColor={themeColor} onClick={handleClick}/>
+          {app.system.interface.content && <Blob theme={theme} isActive={app.system.interface.navBar} isHovering={isHovering} themeColor={themeColor} onClick={handleClick}/> }
         </GlowLarge>
       </Indicator>
       <Navbar app={app} theme={theme} isActive={app.system.interface.navBar}>
         {['Dashboard', 'Carplay', 'Settings'].map((view) => (
-          <div className="column" key={view} style={{ position: 'relative' }}>
+          <div className="column" key={view} style={{ position: 'relative', width: '100%'}}>
             <NavButton onClick={() => {
               console.log('click, ', view)
               app.update((state) => { state.system.view = view })
@@ -88,7 +89,8 @@ const NavBar = ({ isHovering }) => {
                 isActive={app.system.view === view}
                 activeColor={theme.colors.theme[themeColor].active}
                 defaultColor={theme.colors.medium}
-                inactiveColor={theme.colors.medium}>
+                inactiveColor={theme.colors.medium}
+                glowColor={theme.colors.theme[themeColor].active}>
                 <use xlinkHref={`/assets/svg/buttons/${view.toLowerCase()}.svg#${view.toLowerCase()}`}></use>
               </IconNav>
             </NavButton>

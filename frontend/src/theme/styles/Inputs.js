@@ -5,7 +5,7 @@ export const Link = styled.button`
     width: 100%;
 
     color: ${({ theme, isActive, activeColor, inactiveColor }) => isActive ? activeColor : inactiveColor};
-    font-size: ${({ theme }) => theme.typography.caption1.fontSize};
+    font-size: ${({ theme }) => theme.typography.caption2.fontSize};
     
     display: flex;
     flex-direction: row;
@@ -26,7 +26,10 @@ export const Button = styled.button`
     height: ${({ theme }) => theme.interaction.buttonHeight};
     width: 100%;
 
-    font-size: ${({ theme }) => theme.typography.caption1.fontSize};
+    color: ${({ theme }) => theme.colors.text};
+    font-family: ${({ theme }) => theme.typography.button.fontFamily};
+    font-weight: ${({ theme }) => theme.typography.button.fontWeight};
+    font-size: ${({ theme }) => theme.typography.button.fontSize};
     
     display: flex;
     flex-direction: row;
@@ -34,7 +37,6 @@ export const Button = styled.button`
     align-items: center;
 
     gap: 10px;
-    color: ${({ theme }) => theme.colors.text};
     background-color: ${({ theme }) => theme.colors.button};;
     border: none;
 

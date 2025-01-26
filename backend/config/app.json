@@ -69,7 +69,7 @@
 
     "dashBar": {
       "value": true,
-      "label": "TopBar on CarPlay Page"
+      "label": "Carplay in Fullscreen"
     },
     "topBarHeight": {
       "value": 40,

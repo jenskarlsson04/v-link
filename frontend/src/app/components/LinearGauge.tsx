@@ -588,7 +588,7 @@ const LinearGauge = () => {
                     </svg>
 
                     <Speed>
-                        <Display3> {centerValue} </Display3>
+                        <Display3> {Math. floor(centerValue)} </Display3>
                         <Display1
                             style={{
                                 transform: 'translate(0px, 5px)',
@@ -601,7 +601,7 @@ const LinearGauge = () => {
                         style={{
                             textShadow: '0px 0px 70px rgba(255, 255, 255, 0.3)' // Glow effect
                         }}>
-                        <Display4> {progressValue} </Display4>
+                        <Display4> {Math. floor(progressValue)} </Display4>
                         <Body1>{progressUnit} </Body1>
                     </RPM>
 

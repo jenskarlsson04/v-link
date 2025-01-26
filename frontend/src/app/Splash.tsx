@@ -104,12 +104,12 @@ const SplashScreen = () => {
         {showLogo &&
           <Splash>
             <svg xmlns="http://www.w3.org/2000/svg" width="20vh" height="20vh" style={{ fill: 'white' }}>
-              <use xlinkHref="/assets/svg/moose.svg#moose"></use>
+              <use xlinkHref="/assets/svg/logos/moose.svg#moose"></use>
             </svg>
             <svg xmlns="http://www.w3.org/2000/svg" width="40vh" height="10vh" style={{ fill: 'white' }}>
-              <use xlinkHref="/assets/svg/vlink.svg#vlink"></use>
+              <use xlinkHref="/assets/svg/logos/vlink.svg#vlink"></use>
             </svg>
-            <p> v{app.system.version }</p>
+            <p> {app.system.version }</p>
           </Splash>
         }
 

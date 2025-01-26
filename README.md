@@ -51,9 +51,9 @@ Before updating, please uninstall the app. (See below)
 
 ```
 #Download and Install
-wget "https://github.com/LRYMND/v-link/releases/download/v2.2.1/Installer.sh"
-sudo chmod +x Installer.sh
-sudo ./Installer.sh
+wget "https://github.com/LRYMND/v-link/releases/download/v2.2.1/Install.sh"
+sudo chmod +x Install.sh
+sudo ./Install.sh
 
 #Test Hardware (Requires V-Link HAT)
 python /home/$USER/v-link/HWT.py

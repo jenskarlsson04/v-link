@@ -14,6 +14,8 @@ import Carplay from './carplay/Carplay'
 import Cardata from './cardata/Cardata'
 import TopBar from './app/sidebars/TopBar';
 
+import Modal from './app/components/Modal';
+
 import './App.css'
 import './theme/fonts.module.css';
 
@@ -76,8 +78,8 @@ function App() {
   const [ready, setReady] = useState(false)
   /* Observe container resizing and update dimensions. */
   useEffect(() => {
-    const handleResize = () => { 
-      if( containerRef.current && system.startedUp) {
+    const handleResize = () => {
+      if (containerRef.current && system.startedUp) {
 
         const carplayFullscreen = containerRef.current.offsetHeight
         const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value
@@ -85,16 +87,15 @@ function App() {
         console.log(carplayFullscreen, carplayWindowed, app.settings.side_bars.dashBar.value)
 
         app.update((state) => {
-            state.system.windowSize.width = containerRef.current.offsetWidth;
-            state.system.windowSize.height = containerRef.current.offsetHeight;
+          state.system.windowSize.width = containerRef.current.offsetWidth;
+          state.system.windowSize.height = containerRef.current.offsetHeight;
 
-            state.system.carplaySize.width = containerRef.current.offsetWidth;
-            state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed)
+          state.system.carplaySize.width = containerRef.current.offsetWidth;
+          state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed)
         });
 
         setReady(true)
-
-    }
+      }
     };
 
     const resizeObserver = new ResizeObserver(handleResize);

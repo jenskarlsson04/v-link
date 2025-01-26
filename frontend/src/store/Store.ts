@@ -103,7 +103,7 @@ const DATA = create((set) => ({
 const APP = create(
   immer((set) => ({
     system: {
-      version: '2.2.1',
+      version: 'v2.2.1',
       view: '',
       switch: 'ArrowUp',
       lastKey: '',
@@ -151,16 +151,11 @@ const APP = create(
       wifiState: false,
       btState: false,
 
-      phoneState: false,
-      carplayState: false,
-      streamState: false,
-
       canState: false,
       linState: false,
       adcState: false,
       rtiState: false,
 
-      textScale: 1,
     },
     settings: {},
     modules: {},

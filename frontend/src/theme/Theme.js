@@ -17,7 +17,7 @@ export const theme = {
 
   interaction: {
     toggleHeight: '20px',
-    buttonHeight: '35px',
+    buttonHeight: '40px',
     buttonWidth: '200px',
   },
 
@@ -45,31 +45,35 @@ export const theme = {
 
     theme: {
       green: {
-        default: '#5acc5a',
-        active: '#aaeeaa',
-        navGlow: '0 0 20px rgba(90, 204, 90, 1)', // Define your glow here
+        default: '#385538',
+        active: '#5ADC5A',
+        navGlow: '0 0 20px rgba(90, 220, 90, 1)', // Define your glow here
         highlightDark: '#9E3C3C',
         highlightLight: '#FF0000',
       },
   
       blue: {
-        default: '#3C729E',
-        active: '#A7CEEE',
-        navGlow: '0 0 20px rgba(165, 205, 237, 1)', // Define your glow here
+        default: '#2B4459',
+        active: '#70B6EF',
+        navGlow: '0 0 20px rgba(112, 182, 239, 1)', // Define your glow here
         highlightDark: '#9E3C3C',
         highlightLight: '#FF0000',
       },
   
       red: {
-        default: '#3C729E',
-        active: '#A7CEEE',
-        navGlow: '0 0 20px rgba(165, 205, 237, 1)', // Define your glow here
+        default: '#492020',
+        active: '#CC3636',
+        navGlow: '0 0 20px rgba(204, 54, 54, 1)', // Define your glow here
+        highlightDark: '#9E3C3C',
+        highlightLight: '#FF0000',
       },
   
       white: {
-        default: '#3C729E',
-        active: '#A7CEEE',
-        navGlow: '0 0 20px rgba(165, 205, 237, 1)', // Define your glow here
+        default: '#404040',
+        active: '#DBDBDB',
+        navGlow: '0 0 20px rgba(219, 219, 219, 1)', // Define your glow here
+        highlightDark: '#9E3C3C',
+        highlightLight: '#FF0000',
       },
     },
 
@@ -135,8 +139,8 @@ export const theme = {
     },
     button: {
       fontFamily: "'League Spartan', sans-serif",
-      fontWeight: 700,
-      fontSize: '13pt',
+      fontWeight: 400,
+      fontSize: '12pt',
     },
   },
 };

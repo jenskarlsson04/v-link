@@ -99,6 +99,28 @@ if ! command -v pip &>/dev/null; then
     fi
 fi
 
+
+
+
+
+
+
+
+
+# Fetch the latest release info from GitHub (no external package needed)
+echo "Fetching the latest release URL from GitHub..."
+LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/LRYMND/v-link/releases/latest | grep "browser_download_url" | grep "V-Link.zip" | cut -d '"' -f 4)
+
+if [ -z "$LATEST_RELEASE_URL" ]; then
+    echo "Error: Could not find the latest V-Link.zip release."
+    exit 1
+fi
+
+
+
+
+
+
 # Step 4: Install Volvo V-Link
 if confirm_action "install Boosted Moose V-Link now"; then
     # Step 4.1: Install dependencies

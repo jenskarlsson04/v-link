@@ -115,10 +115,10 @@ const DataChart = ({
     const [isRecording, setIsRecording] = useState(false); // State to toggle recording
 
     const generateColors = () => {
-        const baseColor = theme.colors.theme[themeColor].default.replace(/#/g, '');
+        const baseColor = theme.colors.theme[themeColor].active.replace(/#/g, '');
         const hsbColor = convert.hex.hsv(baseColor);
         return datasets.map((_, i) => {
-            const hue = (hsbColor[0] + i * 10) % 360;
+            const hue = (hsbColor[0] + i * 20) % 360;
             return `#${convert.hsv.hex([hue, hsbColor[1], hsbColor[2]])}`;
         });
     };
@@ -214,8 +214,9 @@ const DataChart = ({
                         {/* Horizontal Gradient */}
                         <linearGradient id={`gradient-${i}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={width} y2="0">
                             <stop offset="0%" stopColor="#DBDBDB" />
-                            <stop offset="5%" stopColor="#A7CEEE" />
+                            <stop offset="5%" stopColor={colors[i]} />
                             <stop offset="40%" stopColor={colors[i]} />
+                            <stop offset="100%" stopColor={theme.colors.dark} />
                         </linearGradient>
 
                         {/* Vertical Gradient to highlight values near yMax */}

@@ -156,11 +156,12 @@ const DataBox = () => {
                     isActive={leftData > leftLimit}
                     activeColor={theme.colors.theme[themeColor].highlightDark}
                     defaultColor={theme.colors.light}
-                    inactiveColor={theme.colors.medium}>
-                    <use xlinkHref={`/assets/svg/icons/bold/${leftID}_bold.svg#${leftID}`}></use>
+                    inactiveColor={theme.colors.medium}
+                    glowColor={theme.colors.theme[themeColor].default}>
+                    <use xlinkHref={`/assets/svg/icons/data/${leftID}.svg#${leftID}`}></use>
                 </CustomIcon>
                 <CustomIcon color={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium} stroke={2} size={'40px'}>
-                    <use xlinkHref={`/assets/svg/icons/bold/${'err_bold'}.svg#${'err'}`}></use>
+                    <use xlinkHref={`/assets/svg/icons/data/${'err_bold'}.svg#${'err'}`}></use>
                 </CustomIcon>
                 <CustomIcon
                     stroke={2}
@@ -168,8 +169,9 @@ const DataBox = () => {
                     isActive={rightData > rightLimit}
                     activeColor={theme.colors.theme[themeColor].highlightDark}
                     defaultColor={theme.colors.light}
-                    inactiveColor={theme.colors.medium}>
-                    <use xlinkHref={`/assets/svg/icons/bold/${rightID}_bold.svg#${rightID}`}></use>
+                    inactiveColor={theme.colors.medium}
+                    glowColor={theme.colors.theme[themeColor].default}>
+                    <use xlinkHref={`/assets/svg/icons/data/${rightID}.svg#${rightID}`}></use>
                 </CustomIcon>
             </Icons>
             <Databox ref={containerRef}>
@@ -199,9 +201,10 @@ const DataBox = () => {
                             y={height / 2} // Center text vertically
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="16"
+                            fontSize={theme.typography.display1.fontSize}
+                            fontFamily={theme.typography.display1.fontFamily}
+                            fontWeight={theme.typography.caption2.fontWeight}
                             fill={theme.colors.light}
-                            fontFamily="Arial, sans-serif"
                         >
                             {data[leftName]}
                         </text>
@@ -211,9 +214,11 @@ const DataBox = () => {
                             y={height / 2} // Center text vertically
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="16"
+                            fontSize={theme.typography.display1.fontSize}
+                            fontFamily={theme.typography.display1.fontFamily}
+                            fontWeight={theme.typography.caption2.fontWeight}
                             fill={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium}
-                            fontFamily="Arial, sans-serif"
+
                         >
                             {customMsg}
                         </text>
@@ -223,9 +228,10 @@ const DataBox = () => {
                             y={height / 2} // Center text vertically
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fontSize="16"
+                            fontSize={theme.typography.display1.fontSize}
+                            fontFamily={theme.typography.display1.fontFamily}
+                            fontWeight={theme.typography.caption2.fontWeight}
                             fill={theme.colors.light}
-                            fontFamily="Arial, sans-serif"
                         >
                             {data[rightName]}
                         </text>

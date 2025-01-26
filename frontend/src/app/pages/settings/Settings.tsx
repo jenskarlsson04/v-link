@@ -28,16 +28,15 @@ const Container = styled.div`
 
     height: 100%;
     width: 100%;
-
-    overscroll: hidden;
-
-    gap: 10px;
+    gap: 15px;
 
     box-sizing: border-box;
     padding-left: 50px;
     padding-right: 50px;
     padding-top: 30px;
     padding-bottom: 20px;
+
+    overscroll: hidden;
 `;
 
 const Spacer = styled.div`
@@ -71,7 +70,7 @@ const Element = styled.div`
     height: 35px;
     width: 100%;
 
-    margin-bottom: 7px;
+    margin-bottom: 12px;
 `
 
 
@@ -92,6 +91,7 @@ const Settings = () => {
   const theme = useTheme();
   const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
 
+
   /* Create combined data store for dropdown */
   const dataStores = {}
   Object.entries(modules).map(([key, module]) => {
@@ -107,12 +107,12 @@ const Settings = () => {
 
   const openModal = (content) => {
     // Open the modal with dynamic content
-    store['app'].update((state) => {
+    app.update((state) => {
       state.system.modal = true;
     });
     setModalContent(content);
     setIsModalOpen(true);
-    store['app'].update((state) => {
+    app.update((state) => {
       state.system.modal = false;
     });
   };
@@ -206,19 +206,73 @@ const Settings = () => {
 
   // System Tasks
   function systemTask(request) {
-    /*
-    if (!['reset', 'rti', 'hdmi'].includes(request)) {
+    
+    if (['quit', 'reboot', 'restart'].includes(request)) {
       openModal(
-        <div>
-          <p><strong>Exiting...</strong>.</p>
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+        <Title>Exiting...</Title>
+      </div>
+      );
+
+      setTimeout(() => {
+        sysChannel.emit("systemTask", request);
+      }, 1000)
+    } else if (request === 'reset') {
+      openModal(
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+        <Title>All settings resetted.</Title>
+      </div>
+      );
+    } else {
+      sysChannel.emit("systemTask", request);
+    }
+    
+    setReset(true)
+  }
+
+
+  const checkUpdate = async () => {
+    const githubRepo = "LRYMND/v-link"; // Replace with your GitHub repository
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${githubRepo}/releases/latest`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch the latest release.");
+      }
+
+      const data = await response.json();
+      const latestVersion = data.tag_name; // This is the version (e.g., "v1.2.0")
+
+
+      if (latestVersion === app.system.version)
+        openModal(
+          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+            <Title>No updates available.</Title>
+          </div>
+        );
+      else {
+        openModal(
+          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+            <Title>Update available!</Title>
+            <Body1>Latest version: {latestVersion}.</Body1>
+            <Body1>Current version: {app.system.version}.</Body1>
+            <Button style={{marginTop: '20px'}} onClick={() => systemTask('update')}> Update now.</Button>
+          </div>
+        );
+      }
+    } catch (error) {
+      openModal(
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+          <Title>Error checking for updates:</Title>
+          <Body1>{error}</Body1>
         </div>
       );
     }
-      */
-    console.log('click')
-    sysChannel.emit("systemTask", request);
-    setReset(true)
   }
+
 
   // Toggle Threads
   useEffect(() => {
@@ -354,7 +408,6 @@ const Settings = () => {
                 name={setting}
                 isActive={true}
                 textSize={theme.typography.caption2.fontSize}
-                textScale={system.textScale}
                 onChange={handleChange}
                 value={value}
               >
@@ -366,10 +419,10 @@ const Settings = () => {
               </Select>)
               : (isBoolean
                 ? (<ToggleSwitch
-                    theme={theme}
-                    backgroundColor={theme.colors.medium}
-                    defaultColor={theme.colors.theme[themeColor].default}
-                    activeColor={theme.colors.theme[themeColor].active}>
+                  theme={theme}
+                  backgroundColor={theme.colors.medium}
+                  defaultColor={theme.colors.theme[themeColor].default}
+                  activeColor={theme.colors.theme[themeColor].active}>
                   <input type="checkbox" name={setting} checked={value} onChange={handleChange} />
                   <span className="slider"></span>
                 </ToggleSwitch>)
@@ -417,10 +470,10 @@ const Settings = () => {
               <Caption2>{`CAN ${system.canState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
               <ToggleSwitch
-                    theme={theme}
-                    backgroundColor={theme.colors.medium}
-                    defaultColor={theme.colors.theme[themeColor].default}
-                    activeColor={theme.colors.theme[themeColor].active}>
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.canState} onChange={() => { handleIO("can", canChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -430,10 +483,10 @@ const Settings = () => {
               <Caption2>{`LIN ${system.linState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
               <ToggleSwitch
-                    theme={theme}
-                    backgroundColor={theme.colors.medium}
-                    defaultColor={theme.colors.theme[themeColor].default}
-                    activeColor={theme.colors.theme[themeColor].active}>
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.linState} onChange={() => { handleIO("lin", linChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -443,10 +496,10 @@ const Settings = () => {
               <Caption2>{`ADC ${system.adcState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
               <ToggleSwitch
-                    theme={theme}
-                    backgroundColor={theme.colors.medium}
-                    defaultColor={theme.colors.theme[themeColor].default}
-                    activeColor={theme.colors.theme[themeColor].active}>
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.adcState} onChange={() => { handleIO("adc", adcChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -456,10 +509,10 @@ const Settings = () => {
               <Caption2>{`RTI ${system.rtiState ? '(Active)' : '(Inactive)'}`}</Caption2>
               <Divider />
               <ToggleSwitch
-                    theme={theme}
-                    backgroundColor={theme.colors.medium}
-                    defaultColor={theme.colors.theme[themeColor].default}
-                    activeColor={theme.colors.theme[themeColor].active}>
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
                 <input type="checkbox" checked={system.rtiState} onChange={() => { handleIO("rti", rtiChannel) }} />
                 <span className="slider"></span>
               </ToggleSwitch>
@@ -500,13 +553,13 @@ const Settings = () => {
               <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', gap: '10px' }}>
                 <Button onClick={() => { systemTask('quit') }} style={{ height: '100%' }}> Quit </Button>
                 <Button onClick={() => { systemTask('restart') }} style={{ height: '100%' }}> Restart </Button>
-                <Button onClick={() => { systemTask('reboot') }} style={{ height: '100%' }}> Reboot </Button>
+                <Button onClick={() => { systemTask("rti") }} style={{ height: '100%' }}> {system.rtiState ? "Close RTI" : "Open RTI"} </Button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', gap: '10px' }}>
                 <Button onClick={() => { systemTask('reset') }} style={{ height: '100%' }}> Reset </Button>
-                <Button onClick={() => { systemTask("rti") }} style={{ height: '100%' }}> {system.rtiState ? "Close RTI" : "Open RTI"} </Button>
-                <Button onClick={() => { systemTask("hdmi") }} style={{ height: '100%' }}> Toggle HDMI </Button>
+                <Button onClick={() => { systemTask('reboot') }} style={{ height: '100%' }}> Reboot </Button>
+                <Button onClick={() => { checkUpdate() }} style={{ height: '100%' }}> Update </Button>
               </div>
             </div>
             <p />

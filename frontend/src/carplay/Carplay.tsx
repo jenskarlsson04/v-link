@@ -75,10 +75,8 @@ function Carplay({ command, commandCounter }: CarplayProps) {
 
   const theme = useTheme();
 
-  const [workerState, setWorkerState] = useState<Boolean | null>(false);
-  const [dongleState, setDongleState] = useState<Boolean | null>(false);
   const [phoneState, setPhoneState] = useState<Boolean | null>(false);
-  const [streamState, setStreamState] = useState<Boolean | null>(false);
+
 
   const width = app.system.carplaySize.width
   const height = app.system.carplaySize.height
@@ -187,7 +185,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       switch (type) {
         case 'plugged':
           console.log('Worker connected')
-          setWorkerState(true)
 
           app.update((state) => {
             state.system.carplay.worker = true;
@@ -196,7 +193,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
           break
         case 'unplugged':
           console.log('Worker disconnected')
-          setWorkerState(false)
 
           app.update((state) => {
             state.system.carplay.worker = false;
@@ -284,7 +280,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       } else {
         console.log('Phone disconnected')
         setPhoneState(false)
-        //setStreamState(false)
         app.update((state) => {
           state.system.carplay.phone = false;
         });
@@ -297,7 +292,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   useEffect(() => {
     navigator.usb.onconnect = async () => {
       console.log('Dongle connected')
-      setDongleState(true)
 
       app.update((state) => {
         state.system.carplay.dongle = true;
@@ -311,9 +305,7 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       if (!device) {
         carplayWorker.postMessage({ type: 'stop' })
         console.log('Dongle disconnected')
-        setDongleState(false)
         setPhoneState(false)
-        setStreamState(false)
 
         app.update((state) => {
           state.system.carplay.dongle = false;

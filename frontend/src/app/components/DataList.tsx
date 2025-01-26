@@ -70,7 +70,7 @@ const DataList = (dashPage, itemCount, columns) => {
 
     const themeColor = (app.general.colorTheme.value).toLowerCase()
 
-    const Caption2 = Typography.Caption2;
+    const Body1 = Typography.Body1;
 
     const rows = [];
     const columnsToUse = itemCount === 1 ? 1 : columns; // Use 1 column if there's only one value
@@ -132,7 +132,7 @@ const DataList = (dashPage, itemCount, columns) => {
                         />
                         {dataValue > dataLimit && (
                             <use
-                                href={`/assets/svg/icons/bold/${'err_bold'}.svg#${'err'}`}
+                                href={`/assets/svg/icons/data/${'err_bold'}.svg#${'err'}`}
                                 x="10"
                                 y="7.5"
                                 width="20"
@@ -143,12 +143,12 @@ const DataList = (dashPage, itemCount, columns) => {
                         )}
                         <text
                             x="50%"
-                            y="28%"
+                            y="50%"
                             textAnchor="middle"
-                            alignmentBaseline="central"
-                            fontSize="16"
+                            fontSize={theme.typography.display1.fontSize}
+                            fontFamily={theme.typography.display1.fontFamily}
+                            fontWeight={theme.typography.caption2.fontWeight}
                             fill={theme.colors.light}
-                            fontFamily="Arial, sans-serif"
                         >
                             {dataValue}
                             {dataUnit}
@@ -159,7 +159,6 @@ const DataList = (dashPage, itemCount, columns) => {
                 const label = (
                     <span
                         style={{
-                            fontSize: "14px",
                             color:
                                 dataValue > dataLimit
                                     ? theme.colors.theme[themeColor].highlightDark
@@ -185,7 +184,7 @@ const DataList = (dashPage, itemCount, columns) => {
                 if (colIndex === 0) {
                     columnRows.push(
                         <Element key={`row_${boxIndex}`} style={{ flexDirection: "row" }}>
-                            <Caption2>{label}</Caption2>
+                            <Body1>{label}</Body1>
                             {divider}
                             {valueBox}
                         </Element>
@@ -195,7 +194,7 @@ const DataList = (dashPage, itemCount, columns) => {
                         <Element key={`row_${boxIndex}`} style={{ flexDirection: "row" }}>
                             {valueBox}
                             {divider}
-                            <Caption2>{label}</Caption2>
+                            <Body1>{label}</Body1>
                         </Element>
                     );
                 }

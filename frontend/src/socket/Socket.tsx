@@ -35,22 +35,6 @@ export const Socket = () => {
   // Ref to store a Set of loaded modules, preventing duplicate entries and helping to manage loading state
   const loadedModuleSet = useRef(new Set());
 
-  /* Handle Text Resize */
-  useEffect(() => {
-    if (store['app'].system.initialized) {
-      const multiplier = {
-        Small: 0.75,
-        Default: 1,
-        Large: 1.25,
-      };
-      const textSize = store['app'].settings.general.textSize.value;
-      const textScale = multiplier[textSize] ?? 1;
-      store['app'].update((state) => {
-        state.system.textScale = textScale;
-      });
-    }
-  }, [store['app'].system.initialized, store['app'].settings.general]);
-
   /* Initialize App */
   useEffect(() => {
     // When loadedModules matches totalModules, all modules have been initialized

@@ -92,7 +92,6 @@ const TopBar = () => {
   const theme = useTheme();
 
   const [time, setDate] = useState(new Date());
-  const [carplay, setCarplay] = useState(true);
 
   function updateTime() {
     setDate(new Date());
@@ -102,10 +101,6 @@ const TopBar = () => {
     const timer1 = setInterval(updateTime, 10000);
     return () => clearInterval(timer1);
   }, []);
-
-  useEffect(() => {
-    setCarplay(app.system.streamState && app.system.view === 'Carplay');
-  }, [app.system.streamState, app.system.view]);
 
   return (
     <Topbar isActive={

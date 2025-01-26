@@ -179,6 +179,7 @@ function Carplay() {
                                 : theme.colors.medium
                             : theme.colors.medium
                     }
+                    glowColor={theme.colors.theme[themeColor].default}
                 >
                     <SvgContainer
                         connected={

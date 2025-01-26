@@ -19,8 +19,8 @@ export const IconMedium = styled.svg`
     stroke: ${({ isActive, theme, color, activeColor, inactiveColor }) =>
         color ? color : isActive ? activeColor : inactiveColor};
     transition: fill 0.3s ease-in-out;
-    filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.navGlow})` : 'none'};
+    filter: ${({ isActive, theme, activeColor}) =>
+        isActive ? `drop-shadow(${activeColor})` : 'none'};
 `;
 
 export const IconLarge = styled.svg`
@@ -36,7 +36,7 @@ export const IconLarge = styled.svg`
         fill: ${({ isActive, theme, activeColor, defaultColor }) =>
         isActive ? activeColor : defaultColor};
         filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.default})` : 'none'};
+        isActive ? `drop-shadow(${activeColor})` : 'none'};
     }
 `;
 
@@ -50,7 +50,7 @@ export const IconExtraLarge = styled.svg`
         `drop-shadow(0 0px 100px ${hexToRgba(color, 1)})
         `};
     &:hover {
-        fill: ${({ theme }) =>  theme.colors.theme.blue.default };
+        fill: ${({ defaultColor }) =>  defaultColor };
     }
 `;
 
@@ -64,8 +64,8 @@ stroke-linecap: round;
     stroke: ${({ isActive, theme, activeColor, defaultColor }) =>
         isActive ? activeColor : defaultColor};
     transition: fill 0.3s ease-in-out;
-    filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.navGlow})` : 'none'};
+    filter: ${({ isActive, theme, glowColor }) =>
+        isActive ? `drop-shadow(${glowColor})` : 'none'};
     &:hover {
         stroke: ${({ isActive, theme, activeColor, defaultColor }) =>
         isActive ? activeColor : defaultColor};
@@ -83,6 +83,6 @@ export const CustomIcon = styled.svg`
     stroke: ${({ isActive, theme, color, activeColor, defaultColor }) =>
         color ? color : isActive ? activeColor : defaultColor};
     transition: fill 0.3s ease-in-out;
-    filter: ${({ isActive, theme }) =>
-        isActive ? `drop-shadow(${theme.colors.theme.blue.navGlow})` : 'none'};
+    filter: ${({ isActive, theme, glowColor }) =>
+        isActive ? `drop-shadow(${glowColor})` : 'none'};
 `;
