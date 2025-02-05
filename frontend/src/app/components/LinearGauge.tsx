@@ -85,18 +85,18 @@ const LinearGauge = () => {
     // Load data
     const progressName = settings.gauge_1.value
     const progressType = settings.gauge_1.type
-    const progressValue = data[progressName];
+    const progressValue = data[progressName] ?? 0; // Set default value if undefined
     const progressUnit = modules[progressType]((state) => state.settings.sensors[progressName].unit)
 
 
     const topLeftName = settings.gauge_2.value
     const topLeftType = settings.gauge_2.type
-    const topLeftValue = data[topLeftName];
+    const topLeftValue = data[topLeftName] ?? 0; // Set default value if undefined
     const topLeftUnit = modules[topLeftType]((state) => state.settings.sensors[topLeftName].unit)
 
     const centerName = settings.gauge_3.value
     const centerType = settings.gauge_3.type
-    const centerValue = data[centerName];
+    const centerValue = data[centerName] ?? 0; // Set default value if undefined
     const centerUnit = modules[centerType]((state) => state.settings.sensors[centerName].unit)
 
 
@@ -349,20 +349,20 @@ const LinearGauge = () => {
     /* Render the labels for the Marker */
     const renderMarkers = () => {
         const markerPositions = calculateMarkerPositions(limitStart);
-
+    
         return markerPositions.map((point, index) => {
             // Remove one marker by skipping the last one
             if (index === markerPositions.length - 1) {
                 return null; // Skip the last marker
             }
-
+    
             const startX = padding + point.x * scale.x;
             const startY = padding + point.y * scale.y;
             const endY = 12 + padding + point.y * scale.y;
-
+    
             return (
                 <line
-                    key={index}
+                    key={`marker-${startX}-${startY}`} // Unique key
                     x1={startX}
                     y1={startY - 2}
                     x2={startX}
@@ -373,20 +373,20 @@ const LinearGauge = () => {
             );
         }).filter(Boolean); // filter out null values to avoid rendering unwanted markers
     };
+    
 
     /* Render the vertical Markers */
     const renderLabels = () => {
         const markerPositions = calculateMarkerPositions(maxValue);
-
+    
         // Exclude the first marker
         return markerPositions.slice(1).map((point, index) => {
             const labelX = padding + point.x * scale.x;
             const labelY = padding + point.y * scale.y;
-
-            const Body1 = Typography.Body1;
-
+    
             return (
                 <text
+                    key={`label-${labelX}-${labelY}`} // Unique key
                     x={labelX}
                     y={labelY + 30} // Position text slightly above the marker
                     fontSize="12"

@@ -28,10 +28,6 @@ function Cardata () {
       ) as ADCWorker
       return worker
     }, [])
-
-    useEffect(() => {
-      console.log(data.data)
-    }, data)
   
     useEffect(() => {
         canWorker.onmessage = (event) => {

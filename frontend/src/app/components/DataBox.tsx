@@ -161,7 +161,7 @@ const DataBox = () => {
                     <use xlinkHref={`/assets/svg/icons/data/${leftID}.svg#${leftID}`}></use>
                 </CustomIcon>
                 <CustomIcon color={toggle ? theme.colors.theme.blue.highlightDark : theme.colors.medium} stroke={2} size={'40px'}>
-                    <use xlinkHref={`/assets/svg/icons/data/${'err_bold'}.svg#${'err'}`}></use>
+                    <use xlinkHref={`/assets/svg/icons/data/${'err'}.svg#${'err'}`}></use>
                 </CustomIcon>
                 <CustomIcon
                     stroke={2}
@@ -187,9 +187,8 @@ const DataBox = () => {
                             x={padding} // Center the box by applying half the padding as an offset
                             y={padding}
                             width={width - (padding * 2)} // Subtract padding from width
-                            height={height - (padding * 2)} // Subtract padding from height
-                            rx="12" // Rounded corners
-                            ry="12"
+                            height={Math.max(0, height - (padding * 2))} // Prevent negative height
+                            ry="12"  // Rounded corners
                             fill="rgba(0, 0, 0, 0.2)"
                             stroke="url(#fadeDatabox)"
                             strokeWidth="1"

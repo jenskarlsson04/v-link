@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { APP } from '../../store/Store';
+import { APP, DATA } from '../../store/Store';
 import styled, { css, useTheme } from 'styled-components';
 
-import { IconSmall } from '../../theme/styles/Icons';
+import { IconSmall, CustomIcon } from '../../theme/styles/Icons';
 import { Caption1 } from '../../theme/styles/Typography';
 
 const Topbar = styled.div`
@@ -89,7 +89,20 @@ const ScrollerContent = styled.div`
 
 const TopBar = () => {
   const app = APP((state) => state);
+  const data = DATA((state) => state.data);
+  const modules = APP((state) => state.modules);
+
+
+  const settings = APP((state) => state.settings.dash_topbar);
   const theme = useTheme();
+  const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
+
+
+  const valueName = settings.value.value
+  const valueType = settings.value.type
+  const valueID = modules[valueType]((state) => state.settings.sensors[valueName].app_id)
+  const valueData = data[valueName]
+  const valueLimit = modules[valueType]((state) => state.settings.sensors[valueName].limit_start)
 
   const [time, setDate] = useState(new Date());
 
@@ -116,16 +129,23 @@ const TopBar = () => {
             <Caption1>{time.toLocaleTimeString('sv-SV', { hour: '2-digit', minute: '2-digit' })}</Caption1>
           </ScrollerContent>
           <ScrollerContent active={!app.system.interface.content}>
-            <IconSmall isActive={true}>
-              <use xlinkHref="/assets/svg/icons/thin/oil_temp.svg#oil_temp" />
-            </IconSmall>
-            <Caption1>73°C</Caption1>
+            <CustomIcon
+                stroke={3}
+                size={'14px'}
+                isActive={valueData > valueLimit}
+                activeColor={theme.colors.theme[themeColor].highlightDark}
+                defaultColor={theme.colors.light}
+                inactiveColor={theme.colors.medium}
+                glowColor={theme.colors.theme[themeColor].default}>
+                <use xlinkHref={`/assets/svg/icons/data/${valueID}.svg#${valueID}`}></use>
+            </CustomIcon>
+            <Caption1>{valueData}</Caption1>
           </ScrollerContent>
         </Scroller>
       </Left>
       <Middle>
         <svg viewBox="0 0 350.8 48.95" xmlns="http://www.w3.org/2000/svg">
-          <use xlinkHref="/assets/svg/typo.svg#volvo"></use>
+          <use xlinkHref="/assets/svg/logos/typo.svg#volvo"></use>
         </svg>
       </Middle>
       <Right>

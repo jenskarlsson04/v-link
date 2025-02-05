@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const Link = styled.button`
-    height: ${({ theme }) => theme.interaction.buttonHeight};
+    height: ${({ theme }) => theme.interaction.buttonHeight}px;
     width: 100%;
 
     color: ${({ theme, isActive, activeColor, inactiveColor }) => isActive ? activeColor : inactiveColor};
@@ -23,7 +23,7 @@ export const Link = styled.button`
 `;
 
 export const Button = styled.button`
-    height: ${({ theme }) => theme.interaction.buttonHeight};
+    height: ${({ theme }) => theme.interaction.buttonHeight}px;
     width: 100%;
 
     color: ${({ theme }) => theme.colors.text};
@@ -51,7 +51,7 @@ export const ToggleSwitch = styled.label`
   position: relative;
   display: inline-block;
   width: 50px; /* Width of the toggle */
-  height: ${({ theme }) => theme.interaction.toggleHeight};
+  height: ${({ theme }) => theme.interaction.toggleHeight}px};
   cursor: pointer;
 
   input {
@@ -99,7 +99,7 @@ export const ToggleSwitch = styled.label`
 
 export const Select = styled.select`
   font-size: ${({ textSize = 1, textScale = 1 }) => `${textSize * textScale}vh`};
-  height: ${({ theme }) => theme.interaction.buttonHeight};
+  height: ${({ theme }) => theme.interaction.buttonHeight}px;
   width: 100%;
   border-radius: 10px;
   text-align: center;
@@ -117,7 +117,7 @@ export const Select = styled.select`
   `;
 
 export const Input = styled.input`
-    height: ${({ theme }) => theme.interaction.buttonHeight};
+    height: ${({ theme }) => theme.interaction.buttonHeight}px;
     width: 100%;
     text-align: center;
     text-decoration: none;
