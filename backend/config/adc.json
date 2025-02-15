@@ -4,12 +4,12 @@
 
     "sensors": {
         "pressure": {
-            "app_id": "oilp:",
+            "app_id": "oilp",
             "label": "Oil Pressure",
             "unit": "kPa",
             "min_value": 0,
-            "max_value": 10,
-            "limit_start": 9,
+            "max_value": 1000,
+            "limit_start": 3000,
             "ntc": false,
             "channel": "P1",
             "characteristic": {
@@ -18,7 +18,7 @@
             }
         },
         "temperature": {
-            "app_id": "oilt:",
+            "app_id": "oilt",
             "label": "Oil Temperature",
             "unit": "°C",
             "min_value": 0,

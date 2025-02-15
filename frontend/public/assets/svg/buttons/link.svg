@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="link" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 41 16.5">
+  <g class="cls-1">
+    <path class="left" d="M13,14.5h-5c-4,0-6-3.5-6-6s2-6.5,6-6.5h10c4,0,6,3.5,6,6.5M28,2h5c4,0,6,3.5,6,6s-2,6.5-6,6.5h-10c-4,0-6-3.5-6-6.5" />
+    <path class="right" d="M13,14.5h-5c-4,0-6-3.5-6-6S4,2,8,2h10c4,0,6,3.5,6,6.5M28,2h5c4,0,6,3.5,6,6s-2,6.5-6,6.5h-10c-4,0-6-3.5-6-6.5" />
+  </g>
+</svg>

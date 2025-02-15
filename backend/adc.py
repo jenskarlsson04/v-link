@@ -17,6 +17,7 @@ ads = None
 try:
     i2c = busio.I2C(board.SCL, board.SDA)
     ads = ADS.ADS1115(i2c)
+    ads.gain = 1
 except Exception as e:
     print("i2c error: ", e)
 PULL_UP = 2000
@@ -74,7 +75,7 @@ class ADCThread(threading.Thread):
             characteristics = value["characteristic"]
             interpolated_value = self.interpolate_value(voltage, resistance, characteristics)
 
-            data = (f"{value['app_id']}{interpolated_value}")
+            data = (f"{value['app_id']}:{interpolated_value}")
             self.emit_data_to_frontend(data)
 
     def interpolate_value(self, voltage, resistance, characteristics):

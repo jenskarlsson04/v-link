@@ -20,6 +20,7 @@
 
 import sys
 import os
+import subprocess
 
 def activate_venv():
     venv_path = f"/home/{os.getenv('USER')}/v-link/venv"
@@ -239,6 +240,31 @@ class VLINK:
             shared_state.hdmiStatus = not shared_state.hdmiStatus
 
 
+    def process_update_event(self):
+        if shared_state.update_event.is_set():
+            print("Update event received")
+            shared_state.update_event.clear()
+
+            # Get the current directory and script path
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            script_path = os.path.join(current_dir, "Update.sh")
+
+            # Use `xterm` to ensure visibility
+            #terminal_command = f"xterm -hold -e bash {script_path}"  # `-hold` keeps the terminal open after the script finishes
+
+            try:
+                # Start the terminal in a detached process
+                print(script_path)
+                command = f"lxterminal -e 'bash {script_path}'"
+                os.system(command)
+                shared_state.exit_event.set()
+                
+            except Exception as e:
+                print(f"Error opening terminal: {e}")
+                return
+
+
+
 def clear_screen():
     if os.name == 'nt':
         os.system('cls')
@@ -270,9 +296,9 @@ def setup_arguments():
 
 
 def display_thread_states():
-    clear_screen()
+    #clear_screen()
     # Display the app name and version
-    print("V-Link 2.2.0 | Boosted Moose")
+    print("V-Link 2.2.1 | Boosted Moose")
     print('Device: ', vlink.rpiModel, ' | ', vlink.rpiProtocol)
     print(f"RTI Screen: {'Up' if shared_state.rtiStatus else 'Down'}")
     print("")
@@ -293,7 +319,7 @@ def display_thread_states():
 
 if __name__ == '__main__':
     shared_state.hdmi_event.set()
-    clear_screen()
+    #clear_screen()
 
     vlink = VLINK()
 
@@ -319,6 +345,7 @@ if __name__ == '__main__':
             vlink.process_toggle_event()
             vlink.process_exit_event()
             vlink.process_restart_event()
+            vlink.process_update_event()
             #v-link.process_hdmi_event() # temporarily disabled
 
             if not shared_state.verbose:

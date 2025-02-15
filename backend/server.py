@@ -163,5 +163,8 @@ class ServerThread(threading.Thread):
             shared_state.restart_event.set()
         elif args == 'hdmi':
             shared_state.hdmi_event.set()
+        elif args == 'update':
+            print('updating app')
+            shared_state.update_event.set()
         else:
             if (shared_state.verbose): print('Unknown action:', args)

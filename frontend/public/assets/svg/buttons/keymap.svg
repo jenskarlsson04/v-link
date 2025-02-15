@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="keymap" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 29.99 40.3">
+  <g id="keymap">
+    <g class="cls-1">
+      <path id="Vector_42" class="cls-4" d="M14.79,22.67v-11.11" />
+      <circle id="Ellipse_35" class="cls-3" cx="14.79" cy="6.26" r="4.76" />
+      <path id="Vector_43" class="cls-2" d="M1.03,22.67,28.02,22.67,14.26,30.6" />
+    </g>
+  </g>
+  <polygon class="cls-2" points="14.73 16.58 1.5 24.51 1.5 30.86 14.73 38.8 28.49 30.86 28.49 24.51 14.73 16.58" />
+  <polyline class="cls-2" points="1.49 24.46 14.72 32.18 28.48 24.46" />
+</svg>

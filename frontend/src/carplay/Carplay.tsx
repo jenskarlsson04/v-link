@@ -1,17 +1,62 @@
 /* eslint-disable no-case-declarations */
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { findDevice, requestDevice, CommandMapping, } from 'node-carplay/web'
+import { eventEmitter } from '../app/helper/EventEmitter';
+
+import styled, { css, useTheme } from 'styled-components';
+
 
 import { CarPlayWorker } from './worker/types'
 import useCarplayAudio from './useCarplayAudio'
 import { useCarplayTouch } from './useCarplayTouch'
 import { InitEvent } from './worker/render/RenderEvents'
 
-import { RotatingLines } from 'react-loader-spinner'
-import { APP, MMI } from './../store/Store';
+import { APP, MMI } from '../store/Store';
+import hexToRGBA from '../app/helper/HexToRGBA'
 
-import "./../styles.scss"
 import "./../themes.scss"
+
+const Container = styled.div`
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: 2;
+
+  height: 100%;
+  width: 100%;
+  touch-action: none;
+  overflow: hidden;
+`;
+
+const Stream = styled.div`
+  position: absolute;
+  bottom: 0;
+  zIndex: 1;
+
+  height: 100%;
+  width: 100%;
+
+  padding: 0;
+  margin: 0;
+`
+
+const Overlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  
+  display: flex;
+  justify-content: center;
+  alignItems: center;
+  background: ${({ theme }) => `linear-gradient(to bottom, ${hexToRGBA(theme.colors.bg1, 1)}, ${hexToRGBA(theme.colors.bg2, 1)})`};
+
+  opacity: ${({ isVisible, navVisible }) => (isVisible ? 1 : navVisible ? 0.75 : 0)};
+  pointer-events: none; /* Ensure the overlay does not block pointer events */
+  transition: opacity 0.3s ease-in-out; /* Adjust duration and easing as needed */
+`;
+
 
 const videoChannel = new MessageChannel()
 const micChannel = new MessageChannel()
@@ -28,6 +73,11 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   const app = APP((state) => state);
   const mmi = MMI((state) => state);
 
+  const theme = useTheme();
+
+  const [phoneState, setPhoneState] = useState<Boolean | null>(false);
+
+
   const width = app.system.carplaySize.width
   const height = app.system.carplaySize.height
 
@@ -37,9 +87,6 @@ function Carplay({ command, commandCounter }: CarplayProps) {
     height: height,
     mediaDelay: mmi.config.delay
   }
-
-  const [isPlugged, setIsPlugged] = useState(false)
-  const [deviceFound, setDeviceFound] = useState<Boolean | null>(false)
 
   const mainElem = useRef<HTMLDivElement>(null)
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -94,19 +141,70 @@ function Carplay({ command, commandCounter }: CarplayProps) {
     }
   }, [])
 
+  /* V-Link Mod */
+  // Grabbing a message from renderWorker to get a notification when the stream is starting
+  useEffect(() => {
+    if (!renderWorker) return;
+    renderWorker.onmessage = ev => {
+      const { type } = ev.data;
+      switch (type) {
+        case 'streamStarted':
+          // This useEffect will notify when the phone is connected and the stream started
+          app.update((state) => {
+            state.system.carplay.connected = true;
+          });
+
+          break;
+      }
+    };
+    return () => {
+      renderWorker.onmessage = null; // Clean up the listener when the worker changes
+    };
+  }, [renderWorker]);
+  /* V-Link Mod */
+
+
+  useEffect(() => {
+    const handleEvent = () => {
+      console.log('pairing')
+      pairDongle();
+    };
+
+    eventEmitter.addEventListener("pairDongle", handleEvent);
+
+    // Clean up the event listener on component unmount
+    return () => {
+      eventEmitter.removeEventListener("pairDongle", handleEvent);
+    };
+  }, []);
+
   // subscribe to worker messages
   useEffect(() => {
     carplayWorker.onmessage = ev => {
       const { type } = ev.data
       switch (type) {
         case 'plugged':
-          setIsPlugged(true)
-          app.update({system : { phoneState: true }})
+          console.log('Worker connected')
+
+          app.update((state) => {
+            state.system.carplay.worker = true;
+          });
+
           break
         case 'unplugged':
-          setIsPlugged(false)
-          app.update({system: { phoneState: false }})
-          app.update({system: { carplayState: false }})
+          console.log('Worker disconnected')
+
+          app.update((state) => {
+            state.system.carplay.worker = false;
+            state.system.carplay.phone = false;
+            state.system.carplay.user = false;
+
+            state.system.interface.content = true
+          });
+
+          if (phoneState)
+            console.log('phone still connected... streaming error?')
+
           break
         case 'requestBuffer':
           clearRetryTimeout()
@@ -131,7 +229,9 @@ function Carplay({ command, commandCounter }: CarplayProps) {
               stopRecording()
               break
             case CommandMapping.requestHostUI:
-              app.update({system: { view: "Dashboard" }})
+              app.update((state) => {
+                state.system.interface.navBar = true;
+              });
           }
           break
         case 'failure':
@@ -169,12 +269,20 @@ function Carplay({ command, commandCounter }: CarplayProps) {
     async (request: boolean = false) => {
       const device = request ? await requestDevice() : await findDevice()
       if (device) {
-        console.log('starting in check')
-        setDeviceFound(true)
-        app.update({system: {streamState: true }})
         carplayWorker.postMessage({ type: 'start', payload: { config } })
+
+        console.log('Phone connected')
+        setPhoneState(true)
+
+        app.update((state) => {
+          state.system.carplay.phone = true;
+        });
       } else {
-        setDeviceFound(false)
+        console.log('Phone disconnected')
+        setPhoneState(false)
+        app.update((state) => {
+          state.system.carplay.phone = false;
+        });
       }
     },
     [carplayWorker]
@@ -183,6 +291,12 @@ function Carplay({ command, commandCounter }: CarplayProps) {
   // usb connect/disconnect handling and device check
   useEffect(() => {
     navigator.usb.onconnect = async () => {
+      console.log('Dongle connected')
+
+      app.update((state) => {
+        state.system.carplay.dongle = true;
+        state.system.carplay.pair = true;
+      });
       checkDevice()
     }
 
@@ -190,101 +304,53 @@ function Carplay({ command, commandCounter }: CarplayProps) {
       const device = await findDevice()
       if (!device) {
         carplayWorker.postMessage({ type: 'stop' })
-        setDeviceFound(false)
+        console.log('Dongle disconnected')
+        setPhoneState(false)
+
+        app.update((state) => {
+          state.system.carplay.dongle = false;
+          state.system.carplay.phone = false;
+          state.system.carplay.stream = false;
+          state.system.carplay.user = false;
+
+        });
       }
     }
 
     //checkDevice()
   }, [carplayWorker, checkDevice])
 
-  const onClick = useCallback(() => {
+  const pairDongle = useCallback(() => {
     checkDevice(true)
   }, [checkDevice])
 
   const sendTouchEvent = useCarplayTouch(carplayWorker, width, height)
 
-  const isLoading = !isPlugged
-
-  useEffect(() => {
-    console.log("Phone connected? ", isPlugged)
-  }, [isPlugged])
 
   return (
-    <div
-      style={{ height: '100%', width: '100%', touchAction: 'none', overflow: 'hidden'}}
-      id={'main'}
-      className={`app ${app.settings.general.colorTheme.value}`}
-    >
-      {isLoading && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: height,
-            display: app.system.view === "Carplay" ? 'flex' : 'none',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: 'var(--bgGradient1)',
-          }}
-        >
-          {deviceFound === false && (
-
-            <div style={{
-              color: "var(--textColorDefault)",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <div className="column">
-                <h3>Connect phone or click to pair dongle.</h3>
-                <p/>
-                <button className="button-styles nav-button" onClick={onClick} style={{ fill: 'var(--boxColorLighter)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" height={"25px"} width={"100px"}>
-                    <use xlinkHref="/assets/svg/link.svg#link"></use>
-                  </svg>
-                </button>
-              </div>
-
-            </div>
-          )}
-          {deviceFound === true && (
-            <RotatingLines
-              strokeColor="grey"
-              strokeWidth="5"
-              animationDuration="0.75"
-              width="96"
-              visible={true}
-            />
-          )}
-        </div>
-      )}
-      <div
-        id="videoContainer"
+    <Container>
+      <Stream
         onPointerDown={sendTouchEvent}
         onPointerMove={sendTouchEvent}
         onPointerUp={sendTouchEvent}
         onPointerCancel={sendTouchEvent}
         onPointerOut={sendTouchEvent}
-        style={{
-          height: '100%',
-          width: '100%',
-          padding: 0,
-          margin: 0,
-          display: 'flex',
-        }}
-      >
+
+        style={{ height: app.system.carplaySize.height, width: app.system.carplaySize.width }}>
+
         <canvas
           ref={canvasRef}
           id="video"
           style={
-            isPlugged && app.system.view === "Carplay"
-              ? { height: '100%', overflow: 'hidden'}
+
+            app.system.carplay.paired && app.system.carplay.dongle
+              ? { height: '100%', overflow: 'hidden' }
               : { display: 'none' }
           }
         />
-      </div>
-    </div>
+      </Stream>
+      <Overlay isVisible={app.system.interface.content} navVisible={app.system.interface.navBar} />
+    </Container>
   )
 }
 

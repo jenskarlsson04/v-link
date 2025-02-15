@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import {immer} from 'zustand/middleware/immer'
+
 /*
 import { Stream } from "socketmost/dist/modules/Messages";
 import { DongleConfig } from 'node-carplay/node'
@@ -67,24 +69,30 @@ const EXTRA_CONFIG = {
   canConfig: {}
 }
 
-const MMI = create<MMIStore>((set) => ({
-  bindings: DEFAULT_BINDINGS,
-  config: EXTRA_CONFIG,
-  saveSettings: (settings) => {
-    const mergedSettings: MMIConfig = {
-      //...DEFAULT_CONFIG,
-      ...settings,
-      bindings: settings.mmi_bindings || DEFAULT_BINDINGS,
-    };
-    set({ settings: mergedSettings });
-  },
-  getSettings: () => {
-  },
-  stream: (stream) => {
-  },
-}));
 
-
+const MMI = create(
+  immer((set) => ({
+    bindings: DEFAULT_BINDINGS,
+    config: EXTRA_CONFIG,
+    saveSettings: (settings) => {
+      set((state) => {
+        const mergedSettings = {
+          ...state.config,
+          ...settings,
+          bindings: settings.mmi_bindings || DEFAULT_BINDINGS,
+        };
+        state.config = mergedSettings;
+      });
+    },
+    getSettings: () => {
+      // Add logic as needed
+    },
+    stream: (stream) => {
+      // Add logic as needed
+    },
+    update: (updater) => set(updater),
+  }))
+);
 
 const DATA = create((set) => ({
   data: {}, // Object to store live vehicle data
@@ -92,136 +100,123 @@ const DATA = create((set) => ({
     set((state) => ({ data: { ...state.data, ...newData } })),
 }));
 
+const APP = create(
+  immer((set) => ({
+    system: {
+      version: 'v2.2.1',
+      view: '',
+      switch: 'ArrowUp',
+      lastKey: '',
 
+      settingPage: 1,
+      modal: false,
 
-const APP = create((set) => ({
-  system: {
-    version: '2.2.0',
-    view: '',
-    switch: 'ArrowUp',
-    lastKey: '',
-    modal: false,
+      initialized: false,
+      startedUp: false,
 
-    initialized: false,
-    startedUp: false,
+      windowSize: {
+        width: 800,
+        height: 480,
+      },
 
-    windowSize: {
-      width: 800,
-      height: 480 },
-    contentSize: {
-      width: 800,
-      height: 480
+      contentSize: {
+        width: 800,
+        height: 480,
+      },
+
+      carplaySize: {
+        width: 800,
+        height: 460,
+      },
+
+      carplay: {
+        dongle: false,
+        phone: false,
+        stream: false,
+        user: false,
+        worker: false,
+        fullscreen: false,
+        paired: false,
+        connected: false,
+      },
+
+      interface: {
+        topBar: true,
+        navBar: true,
+        sideBar: true,
+        content: true,
+        carplay: false,
+      },
+
+      wifiState: false,
+      btState: false,
+
+      canState: false,
+      linState: false,
+      adcState: false,
+      rtiState: false,
+
     },
-    carplaySize: {
-      width: 800,
-      height: 460
+    settings: {},
+    modules: {},
+
+
+    update: (updater) => set(updater),
+  }))
+);
+
+const CAN = create(
+  immer((set) => ({
+    system: {
+      state: false,
     },
+    settings: {},
+    update: (updater) => set(updater),
+  }))
+);
 
-    interface: {
-      dashBar: true,
-      topBar: true,
-      navBar: true,
-      content: true,
-      carplay: false
+const LIN = create(
+  immer((set) => ({
+    system: {
+      state: false,
     },
+    settings: {},
+    update: (updater) => set(updater),
+  }))
+);
 
-    wifiState: false,
-    btState: false,
-    
-    phoneState: false,
-    carplayState: false,
-    streamState: false,
+const ADC = create(
+  immer((set) => ({
+    system: {
+      state: false,
+    },
+    settings: {},
+    update: (updater) => set(updater),
+  }))
+);
 
-    canState: false,
-    linState: false,
-    adcState: false,
-    rtiState: false,
+const RTI = create(
+  immer((set) => ({
+    system: {
+      state: false,
+    },
+    settings: {},
+    update: (updater) => set(updater),
+  }))
+);
 
-    textScale: 1,
-  },
-  settings: {},
-  modules: {},
-  update: (newData) =>
-    set((state) => ({
-      ...state,
-      system: { ...state.system, ...newData.system },
-      settings: { ...state.settings, ...newData.settings },
-      modules: { ...state.modules, ...newData.modules }
-    })),
-}));
-
-
-
-const CAN = create((set) => ({
-  system: {
-    state: false
-  },
-  settings: {},
-  update: (newData) =>
-    set((state) => ({
-      ...state,
-      system: { ...state.system, ...newData.system },
-      settings: { ...state.settings, ...newData.settings }
-    })),
-}));
-
-
-
-const LIN = create((set) => ({
-  system: {
-    state: false
-  },
-  settings: {},
-  update: (newData) =>
-    set((state) => ({
-      ...state,
-      system: { ...state.system, ...newData.system },
-      settings: { ...state.settings, ...newData.settings }
-    })),
-}));
-
-
-
-const ADC = create((set) => ({
-  system: {
-    state: false
-  },
-  settings: {},
-  update: (newData) =>
-    set((state) => ({
-      ...state,
-      system: { ...state.system, ...newData.system },
-      settings: { ...state.settings, ...newData.settings }
-    })),
-}));
-
-
-
-const RTI = create((set) => ({
-  system: {
-    state: false
-  },
-  settings: {},
-  update: (newData) =>
-    set((state) => ({
-      ...state,
-      system: { ...state.system, ...newData.system },
-      settings: { ...state.settings, ...newData.settings }
-    })),
-}));
-
-
-// Store to easily broadcast Keystrokes from App.tsx
-const KEY = create((set) => ({
-  keyStroke: "",
-  setKeyStroke: (key) => {
-    set({ keyStroke: key });
-    setTimeout(() => set({ keyStroke: "" }), 0);
-  },
-}));
-
-
-
+const KEY = create(
+  immer((set) => ({
+    keyStroke: '',
+    setKeyStroke: (key) => {
+      set((state) => {
+        state.keyStroke = key;
+      });
+      setTimeout(() => set((state) => { state.keyStroke = ''; }), 0);
+    },
+    update: (updater) => set(updater),
+  }))
+);
 
 
 export { DATA, APP, MMI, CAN, LIN, ADC, RTI, KEY };

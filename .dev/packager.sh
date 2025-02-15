@@ -25,8 +25,9 @@ cp -r backend/ dist/
 
 cp V-Link.py dist/V-Link.py
 cp requirements.txt dist/requirements.txt
-cp Installer.sh dist/Installer.sh
+cp Install.sh dist/Install.sh
 cp Uninstall.sh dist/Uninstall.sh
+cp Update.sh dist/Update.sh
 echo "Done."
 
 echo "Creating Zip..."

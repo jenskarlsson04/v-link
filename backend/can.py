@@ -123,7 +123,7 @@ class CANThread(threading.Thread):
                 value = (data.data[5] << 8) | data.data[6] if message[4] else data.data[5]
                 converted_value = eval(message[3], {'value': value})
 
-                data = message[5] + str(float(converted_value))
+                data = message[5] + ':' + str(float(converted_value))
                 self.emit_data_to_frontend(data)
                 sys.stdout.flush()
                 return True

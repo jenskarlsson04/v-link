@@ -1,17 +1,16 @@
 import { useState, useEffect, useRef, ReactNode } from 'react';
+
+import styled, { useTheme } from 'styled-components';
+import ScrollContainer from 'react-indiana-drag-scroll'
+
+import { ToggleSwitch, Select, Input, Button } from '../../../theme/styles/Inputs';
+import { Typography } from '../../../theme/styles/Typography';
+
 import { APP } from '../../../store/Store';
 
 import { io } from "socket.io-client";
+import Modal from '../../components/Modal';
 
-import SimpleButton from '../../components/SimpleButton'
-import SimpleInput from '../../components/SimpleInput'
-import SimpleSelect from '../../components/SimpleSelect'
-import SimpleLabel from '../../components/SimpleLabel'
-import SimpleCheckbox from '../../components/SimpleCheckbox'
-import SimpleModal from '../../components/SimpleModal';
-
-import "./../../../themes.scss"
-import "./../../../styles.scss"
 
 const appChannel = io("ws://localhost:4001/app")
 const sysChannel = io("ws://localhost:4001/sys")
@@ -21,8 +20,66 @@ const linChannel = io("ws://localhost:4001/lin")
 const adcChannel = io("ws://localhost:4001/adc")
 const rtiChannel = io("ws://localhost:4001/rti")
 
+const Container = styled.div`
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+    width: 100%;
+    gap: 15px;
+
+    box-sizing: border-box;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-top: 30px;
+    padding-bottom: 20px;
+
+    overscroll: hidden;
+`;
+
+const Spacer = styled.div`
+    display: flex;
+    justify-content: right;
+    align-items: center;
+
+    height: 100%;
+    width: ${({ theme }) => theme.interaction.buttonWidth};
+
+    gap: 10px;
+
+    padding-right: 5px;
+    box-sizing: border-box;
+`;
+
+const Divider = styled.div`
+    flex: 1 1 0px;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.dark};
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-top: 5px;
+`
+
+const Element = styled.div`
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+
+    height: 35px;
+    width: 100%;
+
+    margin-bottom: 12px;
+`
+
 
 const Settings = () => {
+
+  /* Load Types */
+  const Body1 = Typography.Body1
+  const Title = Typography.Title
+  const Caption2 = Typography.Caption2
 
   /* Load Stores */
   const app = APP((state) => state)
@@ -31,41 +88,9 @@ const Settings = () => {
   const settings = app.settings;
   const system = app.system;
 
+  const theme = useTheme();
+  const themeColor = (app.settings.general.colorTheme.value).toLowerCase()
 
-  /* Create states */
-  const [currentSettings, setCurrentSettings] = useState(structuredClone(settings));
-  const [activeTab, setActiveTab] = useState(1);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<ReactNode>(null); // State for modal content
-
-  const [save, setSave] = useState(true)
-  const [reset, setReset] = useState(false)
-  const [moose, setMoose] = useState(false)
-
-  const [isDragging, setIsDragging] = useState(false);  // State to track if the user is dragging
-  const [startY, setStartY] = useState(0);  // The initial Y position of the mouse
-  const [scrollTop, setScrollTop] = useState(0);  // To track the scroll position
-  const containerRef = useRef(null);  // Reference for the scrollable container
-
-  // Function to handle mouse down event (start of dragging)
-  const handleMouseDown = (e) => {
-    setIsDragging(true);  // User is dragging
-    setStartY(e.clientY);  // Save the initial mouse Y position
-    setScrollTop(containerRef.current.scrollTop);  // Save the current scroll position
-  };
-
-  // Function to handle mouse move event (dragging in progress)
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;  // Only scroll if dragging
-    const deltaY = startY - e.clientY;  // Calculate how much the mouse has moved
-    containerRef.current.scrollTop = scrollTop + deltaY;  // Adjust scroll position based on movement
-  };
-
-  // Function to handle mouse up event (end of dragging)
-  const handleMouseUp = () => {
-    setIsDragging(false);  // Stop dragging when mouse is released
-  };
 
   /* Create combined data store for dropdown */
   const dataStores = {}
@@ -76,18 +101,20 @@ const Settings = () => {
       Object.assign(dataStores, { [key]: currentModule.settings.sensors })
   });
 
-  /* Switch Tabs */
-  const handleTabChange = (tabIndex) => {
-    setActiveTab(tabIndex);
-  };
-
   /* Open Modal */
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<ReactNode>(null); // State for modal content
+
   const openModal = (content) => {
     // Open the modal with dynamic content
-    app.update({ system: { modal: true } })
+    app.update((state) => {
+      state.system.modal = true;
+    });
     setModalContent(content);
     setIsModalOpen(true);
-    app.update({ system: { modal: false } })
+    app.update((state) => {
+      state.system.modal = false;
+    });
   };
 
   /* Add Settings */
@@ -142,10 +169,15 @@ const Settings = () => {
   };
 
 
-  /* Change Settings */
+  /* Handle Settings */
+  const [save, setSave] = useState(true)
+  const [reset, setReset] = useState(false)
+  const [currentSettings, setCurrentSettings] = useState(structuredClone(settings));
+
+  // Change Settings
   const handleSettingChange = (selectStore, key, name, targetSetting, currentSettings) => {
-    //console.log(selectStore, key, name, targetSetting, currentSettings, dataStores)
     setSave(false)
+    console.log(selectStore, key, name, targetSetting, currentSettings)
     const newSettings = structuredClone(currentSettings);
     let convertedValue
     if (selectStore != 'app') {
@@ -162,29 +194,87 @@ const Settings = () => {
     setCurrentSettings(newSettings);
   };
 
-  /* Save Settings */
+  // Save Settings
   function saveSettings() {
     setSave(true)
-    app.update({ settings: currentSettings });
+    app.update((state) => {
+      state.settings = currentSettings;
+    });
     appChannel.emit("save", currentSettings);
     appChannel.emit("load");
   }
 
-  /* Reset Settings */
+  // System Tasks
   function systemTask(request) {
-    if (!['reset', 'rti', 'hdmi'].includes(request)) {
+    
+    if (['quit', 'reboot', 'restart'].includes(request)) {
       openModal(
-        <div>
-          <p><strong>Exiting...</strong>.</p>
-        </div>
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+        <Title>Exiting...</Title>
+      </div>
       );
-    }
 
-    sysChannel.emit("systemTask", request);
+      setTimeout(() => {
+        sysChannel.emit("systemTask", request);
+      }, 1000)
+    } else if (request === 'reset') {
+      openModal(
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+        <Title>All settings resetted.</Title>
+      </div>
+      );
+    } else {
+      sysChannel.emit("systemTask", request);
+    }
+    
     setReset(true)
   }
 
 
+  const checkUpdate = async () => {
+    const githubRepo = "LRYMND/v-link"; // Replace with your GitHub repository
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${githubRepo}/releases/latest`
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch the latest release.");
+      }
+
+      const data = await response.json();
+      const latestVersion = data.tag_name; // This is the version (e.g., "v1.2.0")
+
+
+      if (latestVersion === app.system.version)
+        openModal(
+          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+            <Title>No updates available.</Title>
+          </div>
+        );
+      else {
+        openModal(
+          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+            <Title>Update available!</Title>
+            <Body1>Latest version: {latestVersion}.</Body1>
+            <Body1>Current version: {app.system.version}.</Body1>
+            <Button style={{marginTop: '20px'}} onClick={() => systemTask('update')}> Update now.</Button>
+          </div>
+        );
+      }
+    } catch (error) {
+      openModal(
+        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+          <Title>Error checking for updates:</Title>
+          <Body1>{error}</Body1>
+        </div>
+      );
+    }
+  }
+
+
+  // Toggle Threads
   useEffect(() => {
     if (reset) {
       setCurrentSettings(app.settings)
@@ -232,7 +322,7 @@ const Settings = () => {
       const dataOptions = {}
 
       // Get current value
-      if (type === "data" && content.type != null) {             // Is the setting responsible for handling data and is a data type assigned?               
+      if (type === "data" && content.type != null && content.type != 'text') {             // Is the setting responsible for handling data and is a data type assigned?               
         label = content.label
         value = dataStores[content.type][content.value].label    // Read content from combined data store
         Object.keys(dataStores).forEach((storeType) => {         // Dataoptions is mapping the sensor, e.g. "Boost" to the corresponding settingsfile, in this case "can"
@@ -248,17 +338,23 @@ const Settings = () => {
 
       // Get options
       //Check if value is a number or boolean
-      const dropdown = (typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
+      const isText = (content.type === 'text')
+      console.log(content)
+
+      const dropdown = (isText || typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
         ? null                                                                    //Yes? Return null
         : (content.options || Object.keys(dataOptions).map((key) =>               //No?  Create dropdown from options
           key
         ))
+      console.log(content.options, dataOptions)
+      console.log(dropdown)
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
 
 
       const handleChange = (event) => {
+        console.log(event)
         const { name, value, checked, type } = event.target;                      // Grab info from the handler
         const newValue = type === 'checkbox' ? checked :                          // Check if type is a boolean
           type === 'number' ? Number(value) : value;               // Check if type is a number
@@ -272,11 +368,10 @@ const Settings = () => {
         }
 
         const targetSetting = isBoolean ? checked : newValue                      // Handle targetSetting based on type
-        //console.log(selectStore, key, name, targetSetting, currentSettings)
+        console.log(name)
 
         handleSettingChange(selectStore, key, name, targetSetting, settingsObj);     // Execute change of settings
       };
-
 
 
       const handleBinding = (key, setting) => {
@@ -302,481 +397,180 @@ const Settings = () => {
         document.addEventListener('keydown', handleKeyPress);
       };
 
-      return (
-        <div className='list row' key={setting}>
-          <SimpleLabel
-            textColor={'var(--textColorDefault)'}
-            text={label}
-            textSize={2.2}
-            textScale={system.textScale}
-          />
 
-          <span className='divider'></span>
-          <div className='column' style={{ flex: '0 0 40%', justifyContent: 'center', alignItems: 'center' }}>
-            {dropdown ? (
-              <SimpleSelect
+      return (
+        <Element>
+          <Caption2>{label}</Caption2>
+          <Divider />
+          <Spacer>
+            {dropdown
+              ? (<Select
                 name={setting}
-                value={value}
-                options={dropdown}
-                onChange={handleChange}
-                textSize={2.2}
-                textScale={system.textScale}
-                textColor={'var(--textColorDefault)'}
                 isActive={true}
-              />
-            ) : (
-              isBoolean ? (
-                <SimpleCheckbox
-                  name={setting}
-                  checked={value}
-                  onChange={handleChange}
-                  colorActive={'var(--themeDefault)'}
-                  colorInactive={'var(--boxColorDark)'}
-                  borderColor={'var(--boxColorDarker)'}
-                  isActive={true}
-                />
-              ) :
-                isBinding ? (
-                  <SimpleButton
-                    text={value}
-                    textSize={2.2}
-                    textScale={system.textScale}
-                    textColor={'var(--textColorDefault)'}
-                    isActive={true}
-                    onClick={() => { handleBinding(key, setting) }}
-                    backgroundColor={'var(--boxColorDarker)'}
-                  />
-                ) :
-                  <SimpleInput
-                    type='number'
-                    name={setting}
-                    value={value}
-                    onChange={handleChange}
-                    textSize={2.2}
-                    textScale={system.textScale}
-                    textColor={'var(--textColorDefault)'}
-                    isActive={true}
-                  />
-            )}
-          </div>
-        </div>
+                textSize={theme.typography.caption2.fontSize}
+                onChange={handleChange}
+                value={value}
+              >
+                {dropdown.map((option) => (
+                  <option key={option.value || option} value={option.value || option}>
+                    {option.label || option}
+                  </option>
+                ))}
+              </Select>)
+              : (isBoolean
+                ? (<ToggleSwitch
+                  theme={theme}
+                  backgroundColor={theme.colors.medium}
+                  defaultColor={theme.colors.theme[themeColor].default}
+                  activeColor={theme.colors.theme[themeColor].active}>
+                  <input type="checkbox" name={setting} checked={value} onChange={handleChange} />
+                  <span className="slider"></span>
+                </ToggleSwitch>)
+                : isBinding
+                  ? (<Button name={setting} onClick={() => { handleBinding(key, setting) }}>
+                    {value}
+                  </Button>)
+                  : <Input name={setting} type={isText ? 'text' : 'number'} value={value} onChange={handleChange} />
+              )}
+          </Spacer>
+        </Element>
       );
     });
 
     return (
       <>
-        <div className='row'>
-          <SimpleLabel
-            textColor={'var(--textColorLight)'}
-            text={<h3> {title} </h3>}
-            textSize={2.2}
-            textScale={system.textScale}
-          />
-        </div>
+        <Element>
+          <Title> {title.toUpperCase()} </Title>
+        </Element>
         {nestedElements}
       </>
     );
   }
 
-  const clickTest = () => {
-    //console.log('Click :)');
-  };
-
 
   return (
-    <>
-      <SimpleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
+    <Container>
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
         {modalContent}
-      </SimpleModal>
+      </Modal>
+      <ScrollContainer
+        className="scroll-container"
+        style={{ width: '100%', height: '100%' }}
+        horizontal={false}
+        hideScrollbars={true}
+        ignoreElements='input, select'
+        key={JSON.stringify(reset)}
+      >
+        {system.settingPage === 1 &&
+          <>
+            {renderSetting("general", currentSettings)}
+            {renderSetting("side_bars", currentSettings)}
 
-      <div key={JSON.stringify(reset)} className={`settings ${settings.general.colorTheme.value}`} style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
+            <Element>
+              <Caption2>{`CAN ${system.canState ? '(Active)' : '(Inactive)'}`}</Caption2>
+              <Divider />
+              <ToggleSwitch
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
+                <input type="checkbox" checked={system.canState} onChange={() => { handleIO("can", canChannel) }} />
+                <span className="slider"></span>
+              </ToggleSwitch>
+            </Element>
 
-        <div className='column' style={{ padding: '0px', height: '90%', justifyContent: 'space-around' }}>
-          <div className='row' style={{ height: '90%' }}>
-            <div className='column' style={{ gap: '3vh' }}>
-              <div className='row' style={{ height: '10%' }}>
-                <h1>SETTINGS</h1>
+            <Element>
+              <Caption2>{`LIN ${system.linState ? '(Active)' : '(Inactive)'}`}</Caption2>
+              <Divider />
+              <ToggleSwitch
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
+                <input type="checkbox" checked={system.linState} onChange={() => { handleIO("lin", linChannel) }} />
+                <span className="slider"></span>
+              </ToggleSwitch>
+            </Element>
+
+            <Element>
+              <Caption2>{`ADC ${system.adcState ? '(Active)' : '(Inactive)'}`}</Caption2>
+              <Divider />
+              <ToggleSwitch
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
+                <input type="checkbox" checked={system.adcState} onChange={() => { handleIO("adc", adcChannel) }} />
+                <span className="slider"></span>
+              </ToggleSwitch>
+            </Element>
+
+            <Element>
+              <Caption2>{`RTI ${system.rtiState ? '(Active)' : '(Inactive)'}`}</Caption2>
+              <Divider />
+              <ToggleSwitch
+                theme={theme}
+                backgroundColor={theme.colors.medium}
+                defaultColor={theme.colors.theme[themeColor].default}
+                activeColor={theme.colors.theme[themeColor].active}>
+                <input type="checkbox" checked={system.rtiState} onChange={() => { handleIO("rti", rtiChannel) }} />
+                <span className="slider"></span>
+              </ToggleSwitch>
+            </Element>
+            <p />
+          </>
+        }
+
+        {system.settingPage === 2 &&
+          <>
+            {renderSetting("dash_topbar", currentSettings)}
+            {renderSetting("dash_classic", currentSettings)}
+            {renderSetting("dash_race", currentSettings)}
+            {renderSetting("dash_charts", currentSettings)}
+
+            <Element>
+              <Caption2>{'Add / Remove Entries'}</Caption2>
+              <Divider />
+              <Spacer>
+                <Button onClick={() => { handleAddSetting("dash_charts", currentSettings) }} style={{ justifyContent: 'center' }}> + </Button>
+                <Button onClick={() => { handleRemoveSetting("dash_charts", currentSettings) }} style={{ justifyContent: 'center' }}> - </Button>
+              </Spacer>
+            </Element>
+            <p />
+          </>
+        }
+
+        {system.settingPage === 3 &&
+          <>
+            {renderSetting("app_bindings", currentSettings)}
+            {renderSetting("mmi_bindings", currentSettings)}
+          </>
+        }
+
+        {system.settingPage === 4 &&
+          <>
+            <div style={{ display: 'flex', width: '100%', height: '90%', gap: '10px', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', gap: '10px' }}>
+                <Button onClick={() => { systemTask('quit') }} style={{ height: '100%' }}> Quit </Button>
+                <Button onClick={() => { systemTask('restart') }} style={{ height: '100%' }}> Restart </Button>
+                <Button onClick={() => { systemTask("rti") }} style={{ height: '100%' }}> {system.rtiState ? "Close RTI" : "Open RTI"} </Button>
               </div>
 
-              <div className='row'>
-                <button className="nav-button" onClick={() => handleTabChange(1)} style={{ fill: (activeTab === 1) ? 'var(--themeDefault)' : 'var(--boxColorLighter)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" width='3vh' height='3vh'>
-                    <use xlinkHref="/assets/svg/settings2.svg#settings2"></use>
-                  </svg>
-                </button>
-                <SimpleButton
-                  height={'100%'}
-                  text={<b>GENERAL</b>}
-                  textSize={2}
-                  textScale={system.textScale}
-                  textColor={activeTab === 1 ? 'var(--textColorLight)' : 'var(--textColorDark)'}
-                  isActive={true}
-                  backgroundColor={activeTab === 1 ? 'transparent' : 'transparent'}
-                  onClick={() => handleTabChange(1)}
-                />
-              </div>
-
-              <div className='row'>
-                <button className="nav-button" onClick={() => handleTabChange(2)} style={{ fill: (activeTab === 2) ? 'var(--themeDefault)' : 'var(--boxColorLighter)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" width='3vh' height='3vh'>
-                    <use xlinkHref="/assets/svg/car.svg#car"></use>
-                  </svg>
-                </button>
-                <SimpleButton
-                  height={'100%'}
-                  text={<b>INTERFACE</b>}
-                  textSize={2}
-                  textScale={system.textScale}
-                  textColor={activeTab === 2 ? 'var(--textColorLight)' : 'var(--textColorDark)'}
-                  isActive={true}
-                  backgroundColor={activeTab === 2 ? 'transparent' : 'transparent'}
-                  onClick={() => handleTabChange(2)}
-                />
-              </div>
-
-              <div className='row'>
-                <button className="nav-button" onClick={() => handleTabChange(3)} style={{ fill: (activeTab === 3) ? 'var(--themeDefault)' : 'var(--boxColorLighter)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" width='3vh' height='3vh'>
-                    <use xlinkHref="/assets/svg/steering.svg#steering"></use>
-                  </svg>
-                </button>
-                <SimpleButton
-                  height={'100%'}
-                  text={<b>KEYMAP</b>}
-                  textSize={2}
-                  textScale={system.textScale}
-                  textColor={activeTab === 3 ? 'var(--textColorLight)' : 'var(--textColorDark)'}
-                  isActive={true}
-                  backgroundColor={activeTab === 1 ? 'transparent' : 'transparent'}
-                  onClick={() => handleTabChange(3)}
-                />
-              </div>
-
-              <div className='row'>
-                <button className="nav-button" onClick={() => handleTabChange(4)} style={{ fill: (activeTab === 4) ? 'var(--themeDefault)' : 'var(--boxColorLighter)' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="nav-icon" width='3vh' height='3vh'>
-                    <use xlinkHref="/assets/svg/io.svg#io"></use>
-                  </svg>
-                </button>
-                <SimpleButton
-                  height={'100%'}
-                  text={<b>SYSTEM</b>}
-                  textSize={2}
-                  textScale={system.textScale}
-                  textColor={activeTab === 4 ? 'var(--textColorLight)' : 'var(--textColorDark)'}
-                  isActive={true}
-                  backgroundColor={activeTab === 1 ? 'transparent' : 'transparent'}
-                  onClick={() => handleTabChange(4)}
-                />
-              </div>
-
-              <div className='row'>
-                <button className="nav-button" onClick={() => {
-                  setMoose(true)
-                  openModal(
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <h1>You found the Turbo-Button!</h1>
-                      <p>Sadly, it doesn't do anything.</p>
-                    </div>
-                  )
-                }} style={{ fill: moose ? 'var(--themeDefault)' : 'transparent' }}>
-                  <svg xmlns="http://www.w3.org/2000/svg" width='3vh' height='3vh'>
-                    <use xlinkHref="/assets/svg/moose.svg#moose"></use>
-                  </svg>
-                </button>
-                <SimpleButton
-                  height={'100%'}
-                  text={<i>V-Link v{system.version}</i>}
-                  textSize={1.5}
-                  textScale={system.textScale}
-                  textColor={'var(--textColorDark)'}
-                  isActive={false}
-                  backgroundColor={activeTab === 1 ? 'transparent' : 'transparent'}
-                  onClick={() => handleTabChange(4)}
-                />
+              <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', gap: '10px' }}>
+                <Button onClick={() => { systemTask('reset') }} style={{ height: '100%' }}> Reset </Button>
+                <Button onClick={() => { systemTask('reboot') }} style={{ height: '100%' }}> Reboot </Button>
+                <Button onClick={() => { checkUpdate() }} style={{ height: '100%' }}> Update </Button>
               </div>
             </div>
+            <p />
+          </>
+        }
 
-
-            <div className='column' style={{ flex: '0 1 70%', gap: '3vh' }}>
-              <div className='frame'>
-                <div className='row' style={{ height: '70%' }}>
-                  <div className='frame' style={{ height: '100%', backgroundColor: 'var(--boxColorDark)' }}>
-                    <div className='column' style={{ height: '80%', justifyContent: 'center' }}>
-                      <div
-                        ref={containerRef}
-                        className='scroller  scrollbar-styles'
-                        style={{ height: '90%', width: '90%', justifyContent: 'flex-start' }}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}>
-
-                        {activeTab === 1 &&
-                          <>
-                            {renderSetting("general", currentSettings)}
-                            {renderSetting("side_bars", currentSettings)}
-
-                            <div className='row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorLight)'}
-                                text={<h3> System Threads </h3>}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                            </div>
-
-                            <div className='list row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorDefault)'}
-                                text={`CAN ${system.canState ? '(Active)' : '(Inactive)'}`}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                              <span className='divider'></span>
-                              <div className='row' style={{ flex: '0 0 40%', marginRight: '10px', height: '5vh' }}>
-                                <SimpleCheckbox
-                                  name={"canState"}
-                                  checked={system.canState}
-                                  onChange={() => { handleIO("can", canChannel) }}
-                                  colorActive={'var(--themeDefault)'}
-                                  colorInactive={'var(--boxColorDark)'}
-                                  borderColor={'var(--boxColorDarker)'}
-                                  isActive={true}
-                                />
-                              </div>
-                            </div>
-
-                            <div className='list row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorDefault)'}
-                                text={`LIN ${system.linState ? '(Active)' : '(Inactive)'}`}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                              <span className='divider'></span>
-                              <div className='row' style={{ flex: '0 0 40%', marginRight: '10px', height: '5vh' }}>
-                                <SimpleCheckbox
-                                  name={"linState"}
-                                  checked={system.linState}
-                                  onChange={() => { handleIO("lin", linChannel) }}
-                                  colorActive={'var(--themeDefault)'}
-                                  colorInactive={'var(--boxColorDark)'}
-                                  borderColor={'var(--boxColorDarker)'}
-                                  isActive={true}
-                                />
-                              </div>
-                            </div>
-
-                            <div className='list row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorDefault)'}
-                                text={`ADC ${system.adcState ? '(Active)' : '(Inactive)'}`}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                              <span className='divider'></span>
-                              <div className='row' style={{ flex: '0 0 40%', marginRight: '10px', height: '5vh' }}>
-                                <SimpleCheckbox
-                                  name={"adcState"}
-                                  checked={system.adcState}
-                                  onChange={() => { handleIO("adc", adcChannel) }}
-                                  colorActive={'var(--themeDefault)'}
-                                  colorInactive={'var(--boxColorDark)'}
-                                  borderColor={'var(--boxColorDarker)'}
-                                  isActive={true}
-                                />
-                              </div>
-                            </div>
-
-                            <div className='list row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorDefault)'}
-                                text={`RTI ${system.rtiState ? '(Active)' : '(Inactive)'}`}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                              <span className='divider'></span>
-                              <div className='row' style={{ flex: '0 0 40%', marginRight: '10px', height: '5vh' }}>
-                                <SimpleCheckbox
-                                  name={"rtiState"}
-                                  checked={system.rtiState}
-                                  onChange={() => { handleIO("rti", rtiChannel) }}
-                                  colorActive={'var(--themeDefault)'}
-                                  colorInactive={'var(--boxColorDark)'}
-                                  borderColor={'var(--boxColorDarker)'}
-                                  isActive={true}
-                                />
-                              </div>
-                            </div>
-                            <p />
-                          </>
-                        }
-
-                        {activeTab === 2 &&
-                          <>
-                            {renderSetting("dash_topbar", currentSettings)}
-                            {renderSetting("dash_classic", currentSettings)}
-                            {renderSetting("dash_race", currentSettings)}
-                            {renderSetting("dash_charts", currentSettings)}
-
-                            <div className='list row'>
-                              <SimpleLabel
-                                textColor={'var(--textColorDefault)'}
-                                text={'Add / Remove Data'}
-                                textSize={2.2}
-                                textScale={system.textScale}
-                              />
-                              <span className='divider'></span>
-                              <div className='row' style={{ flex: '0 0 40%', marginTop: '15px', marginRight: '10px', gap: '10%', height: '5vh' }}>
-                                <div className='input'>
-                                  <SimpleButton
-                                    text={"+"}
-                                    width={'4rem'}
-                                    height={'2rem'}
-                                    textSize={2.5}
-                                    textScale={system.textScale}
-                                    textColor={'var(--textColorDefault)'}
-                                    isActive={true}
-                                    onClick={() => { handleAddSetting("dash_charts", currentSettings) }}
-                                    backgroundColor={'var(--boxColorDarker)'}
-                                  />
-                                </div>
-                                <div className='input'>
-                                  <SimpleButton
-                                    text={"-"}
-                                    width={'4rem'}
-                                    height={'2rem'}
-                                    textSize={2.5}
-                                    textScale={system.textScale}
-                                    textColor={'var(--textColorDefault)'}
-                                    isActive={true}
-                                    onClick={() => { handleRemoveSetting("dash_charts", currentSettings) }}
-                                    backgroundColor={'var(--boxColorDarker)'}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            <p />
-                          </>
-                        }
-
-                        {activeTab === 3 &&
-                          <>
-                            {renderSetting("app_bindings", currentSettings)}
-                            {renderSetting("mmi_bindings", currentSettings)}
-                          </>
-                        }
-
-                        {activeTab === 4 &&
-                          <>
-                            <div className='row' style={{ height: '90%', justifyContent: 'center' }}>
-                              <div className='column' style={{ gap: '3vh' }}>
-                                <SimpleButton
-                                  text={"Quit"}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask('quit') }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-
-                                <SimpleButton
-                                  text={"Restart"}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask('restart') }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-
-                                <SimpleButton
-                                  text={"Reboot"}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask('reboot') }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-                              </div>
-
-                              <div className='column' style={{ gap: '3vh' }}>
-
-                                <SimpleButton
-                                  text={"Reset"}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask('reset') }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-
-                                <SimpleButton
-                                  height={'100%'}
-                                  text={<div>{system.rtiState ? "Close RTI" : "Open RTI"}</div>}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask("rti") }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-
-                                <SimpleButton
-                                  height={'100%'}
-                                  text={<div>Toggle HDMI</div>}
-                                  textSize={2.2}
-                                  textScale={system.textScale}
-                                  textColor={'var(--textColorDefault)'}
-                                  isActive={true}
-                                  onClick={() => { systemTask("hdmi") }}
-                                  backgroundColor={'var(--warmGreyMedium)'}
-                                />
-                              </div>
-                            </div>
-                            <p />
-                          </>
-                        }
-
-                        {/*activeTab === 0 &&
-                          <>
-                            {renderSetting("carplay", currentSettings)}
-                            <p />
-                          </>
-                        */}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className='row' style={{ height: '10vh' }}>
-                <SimpleButton
-                  height={'100%'}
-                  text={save ? 'All Settings saved.': 'Save Settings'}
-                  textSize={2}
-                  textScale={system.textScale}
-                  textColor={'var(--textColorLight)'}
-                  isActive={save ? false : true}
-                  onClick={() => { saveSettings() }}
-                  backgroundColor={'var(--warmGreyLight)'}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div >
-    </>
+      </ScrollContainer>
+      <Button theme={theme} onClick={() => { saveSettings() }} isActive={save ? false : true}>
+        {save ? 'All Settings saved.' : 'Save Settings'}
+      </Button>
+    </Container>
   )
 };
 
