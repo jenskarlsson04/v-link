@@ -296,7 +296,7 @@ def setup_arguments():
 
 
 def display_thread_states():
-    #clear_screen()
+    clear_screen()
     # Display the app name and version
     print("V-Link 2.2.1 | Boosted Moose")
     print('Device: ', vlink.rpiModel, ' | ', vlink.rpiProtocol)

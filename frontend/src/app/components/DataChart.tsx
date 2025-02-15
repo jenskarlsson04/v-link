@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { DATA, APP } from '../../store/Store';
@@ -209,7 +209,7 @@ const DataChart = ({
 
             pathData += `L${width + rightOffset},${points[points.length - 1].y}`;
             return (
-                <>
+                <Fragment key={i}>
                     <defs>
                         {/* Horizontal Gradient */}
                         <linearGradient id={`gradient-${i}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={width} y2="0">
@@ -249,7 +249,7 @@ const DataChart = ({
                         strokeWidth="4"
                         strokeOpacity="0.5"
                     />
-                </>
+                </Fragment>
             );
         });
 

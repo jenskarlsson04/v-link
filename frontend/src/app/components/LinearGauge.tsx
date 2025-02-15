@@ -387,6 +387,7 @@ const LinearGauge = () => {
 
             return (
                 <text
+                    key={index}
                     x={labelX}
                     y={labelY + 30} // Position text slightly above the marker
                     fontSize="12"
