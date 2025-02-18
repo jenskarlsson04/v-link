@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled, { useTheme } from 'styled-components';
 
 import { DATA, APP } from '../../store/Store';
@@ -209,8 +209,8 @@ const DataChart = ({
 
             pathData += `L${width + rightOffset},${points[points.length - 1].y}`;
             return (
-                <Fragment key={i}>
-                    <defs>
+                <React.Fragment key={`path-${i}`}>
+                     <defs key={`defs-${i}`}>
                         {/* Horizontal Gradient */}
                         <linearGradient id={`gradient-${i}`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={width} y2="0">
                             <stop offset="0%" stopColor="#DBDBDB" />
@@ -224,8 +224,13 @@ const DataChart = ({
                             {/* Transparent to red as it approaches yMax */}
                             <stop offset="0%" stopColor="transparent" />
                             <stop
-                                offset={`${(height - (dataset.yMax - dataset.yMin) * yScale) / height}`}
-                                stopColor="rgba(255, 0, 0, 1)"
+                            offset={(() => {
+                                const offsetValue = (height - (dataset.yMax - dataset.yMin) * yScale) / height;
+                                return isNaN(offsetValue) || offsetValue < 0 || offsetValue > 1
+                                ? 0 // Default to 0 if invalid
+                                : offsetValue;
+                            })()}
+                            stopColor="rgba(255, 0, 0, 1)"
                             />
                             <stop offset="100%" stopColor="transparent" />
                         </linearGradient>
@@ -249,7 +254,7 @@ const DataChart = ({
                         strokeWidth="4"
                         strokeOpacity="0.5"
                     />
-                </Fragment>
+                </React.Fragment>
             );
         });
 
@@ -346,7 +351,7 @@ const DataChart = ({
             <History>
                 {datasets.map((dataset, i) => (
                     <div
-                        key={i}
+                        key={dataset.label}
                         style={{
                             color: colors[i],
                             borderRadius: '5px',

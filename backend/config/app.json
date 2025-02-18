@@ -225,23 +225,13 @@
   },
 
   "dash_topbar":{
-    "title": "TopBar-Dash",
+    "title": "TopBar",
     "type": "data",
 
-    "value_1": {
+    "value": {
       "type": "adc",
       "value": "pressure",
-      "label": "Value 1"
-    },
-    "value_2": {
-      "type": "can",
-      "value": "intake",
-      "label": "Value 2"
-    },
-    "value_3": {
-      "type": "can",
-      "value": "coolant",
-      "label": "Value 3"
+      "label": "Value"
     }
   },
 

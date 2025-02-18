@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { APP, MMI, CAN, LIN, ADC, RTI } from '../store/Store';
-import App from '../App';
 
 // Define all modules for easy iteration and reference
 const modules = {
@@ -39,7 +38,7 @@ export const Socket = () => {
   useEffect(() => {
     // When loadedModules matches totalModules, all modules have been initialized
     if (loadedModules === totalModules) {
-      console.log('ready')
+      console.log('App ready.')
       store['app'].update((state) => {
         state.modules = modules;
         state.system.startedUp = true;

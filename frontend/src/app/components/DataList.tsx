@@ -103,7 +103,7 @@ const DataList = (dashPage, itemCount, columns) => {
                 const dataValue = data[dataName];
 
                 const valueBox = (
-                    <Svg key={`value_${boxIndex + 1}`} viewBox={`0 0 ${theme.interaction.buttonWidth} 30px`}>
+                    <Svg key={`value_${boxIndex + 1}`} viewBox={`0 0 ${theme.interaction.buttonWidth} 30`}>
                         <defs>
                             <linearGradient id="fadeBorder" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" stopColor={theme.colors.medium} />
@@ -118,8 +118,8 @@ const DataList = (dashPage, itemCount, columns) => {
                         <rect
                             x="0"
                             y="0"
-                            width={theme.interaction.buttonWidth}
-                            height={theme.interaction.buttonHeight}
+                            width= {`${theme.interaction.buttonWidth}px`}
+                            height= {`${theme.interaction.buttonHeight}px`}
                             rx="12"
                             ry="12"
                             fill="rgba(0, 0, 0, 0.2)"
@@ -132,7 +132,7 @@ const DataList = (dashPage, itemCount, columns) => {
                         />
                         {dataValue > dataLimit && (
                             <use
-                                href={`/assets/svg/icons/data/${'err_bold'}.svg#${'err'}`}
+                                href={`/assets/svg/icons/data/${'err'}.svg#${'err'}`}
                                 x="10"
                                 y="7.5"
                                 width="20"
@@ -144,6 +144,7 @@ const DataList = (dashPage, itemCount, columns) => {
                         <text
                             x="50%"
                             y="50%"
+                            dy=".5em"
                             textAnchor="middle"
                             fontSize={theme.typography.display1.fontSize}
                             fontFamily={theme.typography.display1.fontFamily}
