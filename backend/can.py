@@ -9,7 +9,7 @@ from .shared.shared_state import shared_state
 class Config:
     def __init__(self):
         self.canSettings = settings.load_settings("can")
-        self.timeout = self.canSettings["timeout"]
+        # self.timeout = self.canSettings["timeout"]
         self.interfaces = []
         self.sensors = {}
         self.load_interfaces()
@@ -78,10 +78,16 @@ class CANThread(threading.Thread):
         self.send_threads = []
         self.listen_threads = []
 
+        self.canSettings = self.config.canSettings["controls"]
+        self.zero_message = [int(byte, 16) for byte in self.canSettings['zero_message']]
+        self.control_reply_id = int(self.canSettings['rep_id'], 16)
+        self.control_buttons = {k: [int(byte, 16) for byte in v] for k, v in self.canSettings['button'].items()}
+        self.control_joystick = {k: [int(byte, 16) for byte in v] for k, v in self.canSettings['joystick'].items()}
+
     def run(self):
         self.connect_to_socketio()
         self.initialize_canbus()
-
+            
         # start child threads
         for iface, can_bus in self.can_buses.items():
             sensors = self.config.sensors.get(iface, [])
@@ -90,7 +96,9 @@ class CANThread(threading.Thread):
                 print(f"Warning: No sensors configured for active CAN interface {iface}")
 
             send_thread = CANSendThread(can_bus, sensors, self.client, self._stop_event)
-            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event)
+            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event,
+                                            self.zero_message, self.control_reply_id,
+                                            self.control_buttons, self.control_joystick)
 
             self.send_threads.append(send_thread)
             self.listen_threads.append(listen_thread)
@@ -103,13 +111,17 @@ class CANThread(threading.Thread):
 
     def initialize_canbus(self):
         for iface in self.config.interfaces:
-            print(iface)
             try:
-                self.can_buses[iface["channel"]] = can.interface.Bus(
+                bus = can.interface.Bus(
                     channel=iface["channel"],
                     bustype=iface["bustype"],
                     bitrate=iface["bitrate"]
                 )
+                if bus is None:
+                    print(f"Error failed to initialize CAN bus {iface['channel']}, bus is None")
+                    continue
+
+                self.can_buses[iface["channel"]] = bus
                 print(f"Initialized CAN interface: {iface['channel']}")
             except Exception as e:
                 print(f"Error initializing CAN Bus {iface['channel']}: {e}")
@@ -120,6 +132,9 @@ class CANThread(threading.Thread):
         self._stop_event.set()
         for thread in self.send_threads + self.listen_threads:
             thread.join()
+        for channel, bus in self.can_buses.items():
+            # bus.shutdown()
+            print("CAN Bus shutting down!")
 
     def connect_to_socketio(self):
         max_retries = 10
@@ -156,6 +171,7 @@ class CANSendThread(threading.Thread):
                             sensor["last_requested_time"] = current_time  # Update last request time
 
                             next_send_time = min(next_send_time, current_time + sensor["refresh_rate"])
+                            time.sleep(2) # temp debugging
                     except:
                         print(f"Error preocessing sensor '{sensor['id']}': {e}")
 
@@ -165,17 +181,19 @@ class CANSendThread(threading.Thread):
             print("CAN send thread error:", e)
 
     def request(self, sensor):
+        if not self.can_bus:
+            print("Error: CAN bus is not initialized")
+            return
+
         msg = can.Message(arbitration_id=sensor["req_id"][0], data=sensor["message_bytes"], is_extended_id=True)
         try:
+            print(msg)
             self.can_bus.send(msg)
         except Exception as e:
             print(f"CAN send error: {e}")
-        finally:
-            if self.can_bus:
-                self.can_bus.shutdown()
 
 class CANListenThread(threading.Thread):
-    def __init__(self, can_bus, sensors, client, stop_event):
+    def __init__(self, can_bus, sensors, client, stop_event, zero_message, control_reply_id, control_buttons, control_joystick):
         super(CANListenThread, self).__init__()
         self.can_bus = can_bus
         self.client = client
@@ -185,16 +203,32 @@ class CANListenThread(threading.Thread):
         self.expected_reply_ids = {sensor["rep_id"][0] for sensor in sensors}
         self.sensors_by_id = {sensor["rep_id"][0]: sensor for sensor in sensors}
 
+        self.zero_message = zero_message
+        self.control_reply_id = control_reply_id
+        self.control_buttons = control_buttons
+        self.control_joystick = control_joystick
+
     def run(self):
         while not self._stop_event.is_set():
+            if not self.can_bus:
+                print("Error in CAN listen thread: CAN bus is not initialized")
+                time.sleep(0.5)
+                continue
+
             try:
                 # low timeout to minimize processing delay
                 data = self.can_bus.recv(.001)
-                
-                if data and data.arbitration_id in self.expected_reply_ids:
-                    self.process_message(data)
+
+                if data:
+                    print(data)
+                    if data.arbitration_id in self.control_reply_id:
+                        self.process_control(data)
+
+                    if data.arbitration_id in self.expected_reply_ids:
+                        self.process_message(data)
             except Exception as e:
                 print("CAN listen error:", e)
+                time.sleep(10) # temp
 
     def process_message(self, data):
         sensor = self.sensors_by_id.get(data.arbitration_id)
@@ -208,3 +242,18 @@ class CANListenThread(threading.Thread):
     def emit_data_to_frontend(self, data):
         if self.client and self.client.connected:
             self.client.emit("data", data, namespace="/can")
+
+    def process_control(self, data):
+        message_data = list(data.data)
+
+        if message_data[:len(self.zero_message)] == self.zero_message:
+            print("Zero message detected. Ignoring CAN Frame.")
+            return
+
+        if button_name := next((k for k, v in self.control_buttons.items() if message_data[:len(v)] == v), None):
+            print(f"Button pressed: {button_name}")
+        elif joystick_name := next((k for k, v in self.control_joystick.items() if message_data[:len(v)] == v), None):
+            print(f"Joystick moved: {joystick_name}")
+        else:
+            print("Unknown control signal received:", message_data)
+
