@@ -3,7 +3,7 @@
 # V-Link Installer - https://www.github.com/lrymnd/v-link
 
 # CHECK PERMISSION
-if [[ $EUID -ne 0 ]]; then
+if [ $EUID -ne 0 ]; then
   echo "This script must be run as root to install certain services. Please use sudo. More information can be found in the source of this installer." >&2
   exit 1
 fi

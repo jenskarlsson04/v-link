@@ -164,7 +164,7 @@ const SideBar = ({ collapseLength }) => {
                 </Link>
 
 
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'left', height: theme.interaction.buttonHeight }}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'left', height: `${theme.interaction.buttonHeight}px` }}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '5px' }}>
                         <Link
                             /* 

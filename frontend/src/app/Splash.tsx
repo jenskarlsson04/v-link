@@ -15,7 +15,9 @@ const fadeOut = keyframes`
 `;
 
 // Styled-components
-const Container = styled.div`
+const Container = styled.div.withConfig({
+  shouldForwardProp: (prop) => !['fadeOutAnimation', 'fadeDuration'].includes(prop)
+})`
   position: absolute;
   z-index: 4;
   top: 0;

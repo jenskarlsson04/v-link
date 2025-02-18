@@ -45,7 +45,7 @@ const Spacer = styled.div`
     align-items: center;
 
     height: 100%;
-    width: ${({ theme }) => theme.interaction.buttonWidth};
+    width: ${({ theme }) => theme.interaction.buttonWidth}px;
 
     gap: 10px;
 
