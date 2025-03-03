@@ -111,8 +111,8 @@ class VLINK:
     def start_modules(self):
         if shared_state.vCan:
             self.start_thread('vcan')
-        else:
-            self.start_thread('can')
+        
+        self.start_thread('can')
         time.sleep(.05)
         self.start_thread('rti')
         time.sleep(.05)
@@ -319,7 +319,7 @@ def display_thread_states():
 
 if __name__ == '__main__':
     shared_state.hdmi_event.set()
-    #clear_screen()
+    clear_screen()
 
     vlink = VLINK()
 
