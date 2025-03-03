@@ -221,7 +221,7 @@ class CANListenThread(threading.Thread):
 
                 if data:
                     print(data)
-                    if data.arbitration_id in self.control_reply_id:
+                    if data.arbitration_id == self.control_reply_id:
                         self.process_control(data)
 
                     if data.arbitration_id in self.expected_reply_ids:

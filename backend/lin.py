@@ -114,13 +114,24 @@ class LINThread(threading.Thread):
         print("Stopping LIN thread.")
         time.sleep(.5)
         self._stop_event.set()
+
+        if self.lin_serial and self.lin_serial.is_open:
+            self.lin_serial.close()
+
         del self.input_device # Remove uinput device
+        self.join(timeout=2)
 
     def _read_from_serial(self):
         try:
             while not self._stop_event.is_set():
-                self._process_incoming_byte(self.lin_serial.read(1))
-                # self._timeout_button() # not needed anymore? TODO: test in car
+                if self.lin_serial and self.lin_serial.is_open:
+                    if self.lin_serial.in_waiting > 0:
+                        self._process_incoming_byte(self.lin_serial.read(1))
+                        # self._timeout_button() # not needed anymore? TODO: test in car
+                    else:
+                        time.sleep(0.1)
+                else:
+                    break
         except KeyboardInterrupt:
             print("Live data collection terminated.")
         except serial.SerialException as e:
