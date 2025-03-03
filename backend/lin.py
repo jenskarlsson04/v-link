@@ -176,7 +176,10 @@ class LINThread(threading.Thread):
             elif n == self.lin_frame.kMaxBytes:
                 self.lin_frame.reset()
             else:
-                self.lin_frame.append_byte(byte[0] if isinstance(byte, bytes) else byte)
+                if byte:
+                    self.lin_frame.append_byte(byte[0] if isinstance(byte, bytes) else byte)
+                elif shared_state.verbose:
+                    print("Empty byte, not adding to lin frame")
         except IndexError as e:
             print(f"IndexError: {e} while processing incoming bytes.")
 

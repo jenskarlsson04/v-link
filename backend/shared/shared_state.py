@@ -33,16 +33,15 @@ class SharedState:
         self.update_event = threading.Event()
         self.hdmi_event = threading.Event()
 
-        self.THREAD_STATES = {
-            "server":   False,
-            "app":      False,
-            
-            "can":      False,
-            "lin":      False,
-            "adc":      False,
-            "rti":      False,
-
-            "vcan":     False,
+        # store threads
+        self.THREADS = {
+            "server":   None,
+            "app":      None,
+            "can":      None,
+            "lin":      None,
+            "adc":      None,
+            "rti":      None,
+            "vcan":     None,
         }
 
 shared_state = SharedState()
