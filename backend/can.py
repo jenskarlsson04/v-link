@@ -4,6 +4,7 @@ import can
 import socketio
 import sys
 from . import settings
+from .buttonHandler import ButtonHandler
 from .shared.shared_state import shared_state
 
 class Config:
@@ -79,10 +80,6 @@ class CANThread(threading.Thread):
         self.listen_threads = []
 
         self.canSettings = self.config.canSettings["controls"]
-        self.zero_message = [int(byte, 16) for byte in self.canSettings['zero_message']]
-        self.control_reply_id = int(self.canSettings['rep_id'], 16)
-        self.control_buttons = {k: [int(byte, 16) for byte in v] for k, v in self.canSettings['button'].items()}
-        self.control_joystick = {k: [int(byte, 16) for byte in v] for k, v in self.canSettings['joystick'].items()}
 
     def run(self):
         self.connect_to_socketio()
@@ -96,9 +93,7 @@ class CANThread(threading.Thread):
                 print(f"Warning: No sensors configured for active CAN interface {iface}")
 
             send_thread = CANSendThread(can_bus, sensors, self.client, self._stop_event)
-            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event,
-                                            self.zero_message, self.control_reply_id,
-                                            self.control_buttons, self.control_joystick)
+            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event, self.canSettings)
 
             self.send_threads.append(send_thread)
             self.listen_threads.append(listen_thread)
@@ -193,7 +188,7 @@ class CANSendThread(threading.Thread):
             print(f"CAN send error: {e}")
 
 class CANListenThread(threading.Thread):
-    def __init__(self, can_bus, sensors, client, stop_event, zero_message, control_reply_id, control_buttons, control_joystick):
+    def __init__(self, can_bus, sensors, client, stop_event, can_settings):
         super(CANListenThread, self).__init__()
         self.can_bus = can_bus
         self.client = client
@@ -203,10 +198,15 @@ class CANListenThread(threading.Thread):
         self.expected_reply_ids = {sensor["rep_id"][0] for sensor in sensors}
         self.sensors_by_id = {sensor["rep_id"][0]: sensor for sensor in sensors}
 
-        self.zero_message = zero_message
-        self.control_reply_id = control_reply_id
-        self.control_buttons = control_buttons
-        self.control_joystick = control_joystick
+        self.zero_message = [int(byte, 16) for byte in can_settings['zero_message']]
+        self.control_reply_id = int(can_settings['rep_id'], 16)
+        self.control_buttons = {k: [int(byte, 16) for byte in v] for k, v in can_settings['button'].items()}
+        self.control_joystick = {k: [int(byte, 16) for byte in v] for k, v in can_settings['joystick'].items()}
+
+        self.button_handler = ButtonHandler(
+            300,
+            2000
+        )
 
     def run(self):
         while not self._stop_event.is_set():
@@ -246,7 +246,8 @@ class CANListenThread(threading.Thread):
         message_data = list(data.data)
 
         if message_data[-len(self.zero_message):] == self.zero_message:
-            print("Zero message detected. Ignoring CAN Frame.")
+            if shared_state.verbose:
+                print("Zero message detected. Ignoring CAN Frame.")
             return
 
         if not hasattr(self, "control_lookup"):
@@ -257,7 +258,8 @@ class CANListenThread(threading.Thread):
         # Only check the last 2 bytes (change this if the control CAN IDs are longer)
         key = tuple(message_data[-2:]) 
         if key in self.control_lookup:
-            print(f"Control signal detected: {self.control_lookup[key]}")
+            print(f"Pressing: {self.control_lookup[key]}")
+            self.button_handler.handle(self.control_lookup[key])
             return
         
         message_hex = " ".join(f"{byte:02X}" for byte in message_data)

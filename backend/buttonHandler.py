@@ -20,8 +20,7 @@ class JoystickState(Enum):
     MOVING = auto()
 
 class ButtonHandler:
-    def __init__(self, input_device, click_timeout, long_press_duration):
-        self.input_device = input_device
+    def __init__(self, click_timeout, long_press_duration):
         self.click_timeout = click_timeout
         self.long_press_duration = long_press_duration
 
@@ -35,6 +34,21 @@ class ButtonHandler:
 
         self.mouse_speed = 300
         self.mouse_mode = False
+
+        self.input_device = uinput.Device([
+            uinput.REL_X,        # Relative X axis (horizontal movement)
+            uinput.REL_Y,        # Relative Y axis (vertical movement)
+            uinput.BTN_LEFT,     # Mouse left click
+            uinput.KEY_BACKSPACE,
+            uinput.KEY_N,
+            uinput.KEY_V,
+            uinput.KEY_H,
+            uinput.KEY_SPACE,
+            uinput.KEY_UP,
+            uinput.KEY_DOWN,
+            uinput.KEY_LEFT,
+            uinput.KEY_RIGHT
+        ])
 
     def handle(self, button_name):
         self._handle_buttons(button_name)

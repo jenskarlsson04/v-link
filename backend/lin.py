@@ -2,7 +2,6 @@ import threading
 import time
 import sys
 import serial
-import uinput
 from enum import Enum, auto
 from pathlib import Path
 from .buttonHandler import ButtonHandler
@@ -46,22 +45,6 @@ class LINThread(threading.Thread):
         self.lin_frame = LinFrame()
         self.lin_serial = None
 
-        # input device initialization
-        self.input_device = uinput.Device([
-            uinput.REL_X,        # Relative X axis (horizontal movement)
-            uinput.REL_Y,        # Relative Y axis (vertical movement)
-            uinput.BTN_LEFT,     # Mouse left click
-            uinput.KEY_BACKSPACE,
-            uinput.KEY_N,
-            uinput.KEY_V,
-            uinput.KEY_H,
-            uinput.KEY_SPACE,
-            uinput.KEY_UP,
-            uinput.KEY_DOWN,
-            uinput.KEY_LEFT,
-            uinput.KEY_RIGHT
-        ])
-
         self._stop_event = threading.Event()
         self.daemon = True
         lin_settings = self.config.lin_settings
@@ -78,7 +61,6 @@ class LINThread(threading.Thread):
         self.long_press_duration = lin_settings.get("long_press_duration", 2000)
 
         self.button_handler = ButtonHandler(
-            self.input_device,
             self.click_timeout,
             self.long_press_duration
         )
@@ -118,7 +100,6 @@ class LINThread(threading.Thread):
         if self.lin_serial and self.lin_serial.is_open:
             self.lin_serial.close()
 
-        del self.input_device # Remove uinput device
         self.join(timeout=2)
 
     def _read_from_serial(self):
@@ -142,6 +123,7 @@ class LINThread(threading.Thread):
     def _read_from_file(self):
         print("Replaying LIN bus data from file...")
         try:
+            time.sleep(10) # wait for app to be started
             with open(Path(__file__).parent / "dev/lin_test.txt", "r") as file:
                 for line in file:
                     if self._stop_event.is_set():
@@ -177,7 +159,8 @@ class LINThread(threading.Thread):
         swm_id = bytes.fromhex(self.config.lin_settings["swm_id"][2:])
                 
         if self.lin_frame.get_byte(0) != swm_id[0]:
-            print(f"Frame rejected - First byte = {self.lin_frame.get_byte(0)}, Expected = {swm_id[0]}")
+            if shared_state.verbose:
+                print(f"Frame rejected - First byte = {self.lin_frame.get_byte(0)}, Expected = {swm_id[0]}")
             return
 
         zero_code = bytes.fromhex(self.config.lin_settings["zero_code"][2:])

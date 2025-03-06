@@ -215,7 +215,7 @@
         "zero_message": ["0x00", "0x00", "0x3F"],
         "button": {
             "BTN_BACK": ["0x10", "0x3F"],
-            "BTN_ENTER": ["0x20", "0x2F"],
+            "BTN_ENTER": ["0x20", "0x3F"],
             "BTN_YES": ["0x00", "0x2F"],
             "BTN_NO": ["0x00", "0x1F"],
             "BTN_NEXT": ["0x00", "0x3D"],
@@ -226,6 +226,8 @@
             "BTN_DOWN": ["0x04", "0x3F"],
             "BTN_LEFT": ["0x01", "0x3F"],
             "BTN_RIGHT": ["0x02", "0x3F"]
-        }
+        },
+        "long_press_duration": 1500,
+        "click_timeout": 300
     }
 }
