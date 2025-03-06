@@ -220,7 +220,6 @@ class CANListenThread(threading.Thread):
                 data = self.can_bus.recv(.001)
 
                 if data:
-                    print(data)
                     if data.arbitration_id == self.control_reply_id:
                         self.process_control(data)
 
@@ -246,14 +245,21 @@ class CANListenThread(threading.Thread):
     def process_control(self, data):
         message_data = list(data.data)
 
-        if message_data[:len(self.zero_message)] == self.zero_message:
+        if message_data[-len(self.zero_message):] == self.zero_message:
             print("Zero message detected. Ignoring CAN Frame.")
             return
 
-        if button_name := next((k for k, v in self.control_buttons.items() if message_data[:len(v)] == v), None):
-            print(f"Button pressed: {button_name}")
-        elif joystick_name := next((k for k, v in self.control_joystick.items() if message_data[:len(v)] == v), None):
-            print(f"Joystick moved: {joystick_name}")
-        else:
-            print("Unknown control signal received:", message_data)
+        if not hasattr(self, "control_lookup"):
+            self.control_lookup = {
+                tuple(v): k for k, v in {**self.control_buttons, **self.control_joystick}.items()
+            }
 
+        # Only check the last 2 bytes (change this if the control CAN IDs are longer)
+        key = tuple(message_data[-2:]) 
+        if key in self.control_lookup:
+            print(f"Control signal detected: {self.control_lookup[key]}")
+            return
+        
+        message_hex = " ".join(f"{byte:02X}" for byte in message_data)
+        print(f"Unknown control signal received: {message_hex}")
+            
