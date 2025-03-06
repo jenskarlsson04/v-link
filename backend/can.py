@@ -193,6 +193,7 @@ class CANListenThread(threading.Thread):
         self.can_bus = can_bus
         self.client = client
         self._stop_event = stop_event
+        self.can_settings = can_settings
 
         # Store expected reply IDs as a set for fast lookup
         self.expected_reply_ids = {sensor["rep_id"][0] for sensor in sensors}
@@ -204,8 +205,8 @@ class CANListenThread(threading.Thread):
         self.control_joystick = {k: [int(byte, 16) for byte in v] for k, v in can_settings['joystick'].items()}
 
         self.button_handler = ButtonHandler(
-            300,
-            2000
+            can_settings['click_timeout'],
+            can_settings['long_press_duration']
         )
 
     def run(self):
@@ -220,7 +221,7 @@ class CANListenThread(threading.Thread):
                 data = self.can_bus.recv(.001)
 
                 if data:
-                    if data.arbitration_id == self.control_reply_id:
+                    if self.can_settings['enabled'] and data.arbitration_id == self.control_reply_id:
                         self.process_control(data)
 
                     if data.arbitration_id in self.expected_reply_ids:

@@ -210,6 +210,7 @@
         }
     },
     "controls": {
+        "enabled": true,
         "interface": "can0",
         "rep_id": "0x0131726C",
         "zero_message": ["0x00", "0x00", "0x3F"],
