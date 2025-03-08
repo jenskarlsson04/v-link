@@ -30,6 +30,9 @@ class Config:
             try:
                 iface = sensor["interface"]
 
+                if not sensor['enabled']:
+                    continue
+
                 if iface not in self.sensors:
                     self.sensors[iface] = []
 
@@ -54,6 +57,7 @@ class Config:
                     raise ValueError(f"Invalid scale format for sensor {key}")
 
                 self.sensors[iface].append({
+                    "type": sensor['type'],
                     "req_id": [req_id],
                     "rep_id": [rep_id],
                     "message_bytes": message_bytes,
@@ -92,7 +96,10 @@ class CANThread(threading.Thread):
             if not sensors:
                 print(f"Warning: No sensors configured for active CAN interface {iface}")
 
-            send_thread = CANSendThread(can_bus, sensors, self.client, self._stop_event)
+            # do not send requests for internal sensors
+            filtered_sensors = [sensor for sensor in sensors if sensor.get("type") != "internal"]
+            send_thread = CANSendThread(can_bus, filtered_sensors, self.client, self._stop_event)
+
             listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event, self.canSettings)
 
             self.send_threads.append(send_thread)
@@ -168,7 +175,7 @@ class CANSendThread(threading.Thread):
                             next_send_time = min(next_send_time, current_time + sensor["refresh_rate"])
                             time.sleep(2) # temp debugging
                     except:
-                        print(f"Error preocessing sensor '{sensor['id']}': {e}")
+                        print(f"Error processing sensor '{sensor['id']}': {e}")
 
                 sleep_time = max(0, next_send_time - time.time())
                 time.sleep(sleep_time) # sleep until a sensor needs to be updated
