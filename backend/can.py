@@ -201,13 +201,23 @@ class CANListenThread(threading.Thread):
 
         self.zero_message = [int(byte, 16) for byte in can_settings['zero_message']]
         self.control_reply_id = int(can_settings['rep_id'], 16)
-        self.control_buttons = {k: [int(byte, 16) for byte in v] for k, v in can_settings['button'].items()}
-        self.control_joystick = {k: [int(byte, 16) for byte in v] for k, v in can_settings['joystick'].items()}
+        self.control_byte_count = can_settings['control_byte_count']
 
+        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in can_settings['button'].items()}
+        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in can_settings['joystick'].items()}
+    
         self.button_handler = ButtonHandler(
             can_settings['click_timeout'],
             can_settings['long_press_duration']
         )
+
+    def parse_can_control_values(self, value):
+        if isinstance(value[0], list):
+            # Multiple CAN message (Already a list of lists)
+            return [tuple(int(byte, 16) for byte in pair) for pair in value]
+        else:
+            # Single CAN message (flat list), wrap in a list
+            return [tuple(int(byte, 16) for byte in value)]   
 
     def run(self):
         while not self._stop_event.is_set():
@@ -252,12 +262,13 @@ class CANListenThread(threading.Thread):
             return
 
         if not hasattr(self, "control_lookup"):
-            self.control_lookup = {
-                tuple(v): k for k, v in {**self.control_buttons, **self.control_joystick}.items()
-            }
+            self.control_lookup = {}
 
-        # Only check the last 2 bytes (change this if the control CAN IDs are longer)
-        key = tuple(message_data[-2:]) 
+            for button_name, value_lists in {**self.control_buttons, **self.control_joystick}.items():
+                for key_tuple in value_lists:
+                    self.control_lookup[key_tuple] = button_name
+
+        key = tuple(message_data[-self.control_byte_count:]) 
         if key in self.control_lookup:
             print(f"Pressing: {self.control_lookup[key]}")
             self.button_handler.handle(self.control_lookup[key])
@@ -265,4 +276,4 @@ class CANListenThread(threading.Thread):
         
         message_hex = " ".join(f"{byte:02X}" for byte in message_data)
         print(f"Unknown control signal received: {message_hex}")
-            
+ 
