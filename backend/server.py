@@ -37,9 +37,15 @@ class ServerThread(threading.Thread):
         try:
             # Run the server in a green thread
             eventlet.spawn(self._serve)
+
+            # Handle ignition in a green thread
+            eventlet.spawn(self.monitor_ignition_state)
+
             # Keep the thread alive until stop_event is set
             while not self.stop_event.is_set():
                 eventlet.sleep(0.1)
+
+
         except Exception as e:
             print(e)
 
@@ -62,6 +68,30 @@ class ServerThread(threading.Thread):
         # Raise StopServe to terminate the WSGI server loop
         eventlet.spawn(self.server_socket.close)
         self.stop_event.set()
+
+    def monitor_ignition_state(self):
+        previous_ign_state = None  # Variable to track the previous state of shared_state.ign
+        
+        while not self.stop_event.is_set():
+            # Check if shared_state.ign has changed
+            current_ign_state = shared_state.ign_state.is_set()
+
+            # If the state has changed, send a message to the frontend
+            if current_ign_state != previous_ign_state:
+                if current_ign_state:
+                    if shared_state.verbose:
+                        print("Ignition ON, sending event to frontend.")
+                    socketio.emit('ign', True, namespace='/')
+                else:
+                    if shared_state.verbose:
+                        print("Ignition OFF, sending event to frontend.")
+                    socketio.emit('ign', False, namespace='/')
+
+                # Update the previous state to the current state
+                previous_ign_state = current_ign_state
+
+            eventlet.sleep(0.1)  # Allow other tasks to run while checking ignition state
+
         
     # Add custom headers to all responses
     @server.after_request

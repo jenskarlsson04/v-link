@@ -44,17 +44,29 @@ class IGNThread(threading.Thread):
         lgpio.gpiochip_close(self.chip)  # Close GPIO chip
 
     def monitor_ignition(self):
+        previous_state = None  # Variable to track the previous state of the ignition pin
+        
         while not self._stop_event.is_set():
             try:
                 # Read GPIO pin value (LOW = Ignition OFF)
-                print(lgpio.gpio_read(self.chip, self.IGNITION_PIN))
-                if lgpio.gpio_read(self.chip, self.IGNITION_PIN) == 1:
-                    shared_state.ign_event.set()
-                    print("Ignition turned off! Performing shutdown sequence...")
-                    #break  # Exit thread after shutdown is triggered
+                current_state = lgpio.gpio_read(self.chip, self.IGNITION_PIN)
+                
+                # Check if the state has changed
+                if current_state != previous_state:
+                    if current_state == 1: # Pin is raised high when Ignition is turned off.
+                        shared_state.ign_state.clear()  # Ignition is OFF, so clear the state
+                        print("Ignition OFF! Clearing shared_state.ign...")
+                    else:
+                        shared_state.ign_state.set()  # Ignition is ON, so set the state
+                        print("Ignition ON! Setting shared_state.ign...")
+                    
+                    # Update previous state for the next iteration
+                    previous_state = current_state
+
             except lgpio.error as e:
                 print(f"Error reading GPIO {self.IGNITION_PIN}: {e}")
                 time.sleep(1)  # Avoid tight looping if there's a problem
                 continue
 
             time.sleep(1)  # Avoid high CPU usage
+

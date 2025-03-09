@@ -33,7 +33,9 @@ class SharedState:
         self.restart_event = threading.Event()
         self.update_event = threading.Event()
         self.hdmi_event = threading.Event() 
-        self.ign_event = threading.Event()
+
+        self.ign_state = threading.Event()
+
 
         self.shutdown_pi = threading.Event()
 

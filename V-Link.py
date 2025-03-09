@@ -346,6 +346,9 @@ if __name__ == '__main__':
     shared_state.vite = args.vite
     shared_state.isKiosk = args.nokiosk
 
+    # Update ign status when app launches
+    shared_state.ign_state.set()
+
     # Start main threads:
     vlink.start_modules()
     vlink.print_thread_states()
