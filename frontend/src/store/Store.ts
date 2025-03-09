@@ -109,7 +109,6 @@ const APP = create(
       lastKey: '',
 
       settingPage: 1,
-      modal: false,
 
       initialized: false,
       startedUp: false,
@@ -146,6 +145,11 @@ const APP = create(
         sideBar: true,
         content: true,
         carplay: false,
+      },
+
+      modal: {
+        visible: false,
+        content: null,
       },
 
       wifiState: false,

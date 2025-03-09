@@ -35,6 +35,8 @@ class SharedState:
         self.hdmi_event = threading.Event() 
         self.ign_event = threading.Event()
 
+        self.shutdown_pi = threading.Event()
+
         self.THREAD_STATES = {
             "server":   False,
             "app":      False,

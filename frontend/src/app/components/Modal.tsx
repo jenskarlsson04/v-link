@@ -38,12 +38,12 @@ const Button = styled.button`
   color: #DBDBDB;
 `
 
-const Modal = ({ isOpen, onClose, children }) => {
+const Modal = ({ isOpen, onClose, content }) => {
   if (!isOpen) return null; // Don't render the modal if it's not open
 
   return ReactDOM.createPortal(
     <Content>
-      {children}
+      {content}
       <Button onClick={onClose}>
         X
       </Button>

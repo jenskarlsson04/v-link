@@ -101,20 +101,11 @@ const Settings = () => {
       Object.assign(dataStores, { [key]: currentModule.settings.sensors })
   });
 
-  /* Open Modal */
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<ReactNode>(null); // State for modal content
-
   const openModal = (content) => {
-    // Open the modal with dynamic content
     app.update((state) => {
-      state.system.modal = true;
-    });
-    setModalContent(content);
-    setIsModalOpen(true);
-    app.update((state) => {
-      state.system.modal = false;
-    });
+      state.system.modal.visible = true;
+      state.system.modal.content = content
+    })
   };
 
   /* Add Settings */
@@ -206,27 +197,27 @@ const Settings = () => {
 
   // System Tasks
   function systemTask(request) {
-    
+
     if (['quit', 'reboot', 'restart'].includes(request)) {
       openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-        <Title>Exiting...</Title>
-      </div>
-      );
-
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Title>Exiting...</Title>
+        </div>
+      )
       setTimeout(() => {
+        console.log('exiting')
         sysChannel.emit("systemTask", request);
       }, 1000)
     } else if (request === 'reset') {
       openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-        <Title>All settings resetted.</Title>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Title>All settings resetted.</Title>
+        </div>
       );
     } else {
       sysChannel.emit("systemTask", request);
     }
-    
+
     setReset(true)
   }
 
@@ -249,23 +240,23 @@ const Settings = () => {
 
       if (latestVersion === app.system.version)
         openModal(
-          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Title>No updates available.</Title>
           </div>
         );
       else {
         openModal(
-          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             <Title>Update available!</Title>
             <Body1>Latest version: {latestVersion}.</Body1>
             <Body1>Current version: {app.system.version}.</Body1>
-            <Button style={{marginTop: '20px'}} onClick={() => systemTask('update')}> Update now.</Button>
+            <Button style={{ marginTop: '20px' }} onClick={() => systemTask('update')}> Update now.</Button>
           </div>
         );
       }
     } catch (error) {
       openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <Title>Error checking for updates:</Title>
           <Body1>{error}</Body1>
         </div>
@@ -339,22 +330,23 @@ const Settings = () => {
       // Get options
       //Check if value is a number or boolean
       const isText = (content.type === 'text')
-      console.log(content)
+      //console.log(content)
 
       const dropdown = (isText || typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
         ? null                                                                    //Yes? Return null
         : (content.options || Object.keys(dataOptions).map((key) =>               //No?  Create dropdown from options
           key
         ))
-      console.log(content.options, dataOptions)
-      console.log(dropdown)
+      //console.log(content.options, dataOptions)
+      //console.log(dropdown)
+      
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
 
 
       const handleChange = (event) => {
-        console.log(event)
+        //console.log(event)
         const { name, value, checked, type } = event.target;                      // Grab info from the handler
         const newValue = type === 'checkbox' ? checked :                          // Check if type is a boolean
           type === 'number' ? Number(value) : value;               // Check if type is a number
@@ -368,14 +360,14 @@ const Settings = () => {
         }
 
         const targetSetting = isBoolean ? checked : newValue                      // Handle targetSetting based on type
-        console.log(name)
+        //console.log(name)
 
         handleSettingChange(selectStore, key, name, targetSetting, settingsObj);     // Execute change of settings
       };
 
 
       const handleBinding = (key, setting) => {
-        console.log(key, setting)
+        //console.log(key, setting)
         openModal(
           <div>
             <p><strong>Press a Key or ESC.</strong>.</p>
@@ -389,7 +381,6 @@ const Settings = () => {
             handleSettingChange("app", key, setting, event.code, settingsObj);
           }
 
-          setIsModalOpen(false); // Close the modal
           document.removeEventListener('keydown', handleKeyPress); // Clean up listener
         };
 
@@ -450,9 +441,6 @@ const Settings = () => {
 
   return (
     <Container>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {modalContent}
-      </Modal>
       <ScrollContainer
         className="scroll-container"
         style={{ width: '100%', height: '100%' }}
