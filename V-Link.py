@@ -53,6 +53,7 @@ from backend.adc                 import ADCThread
 from backend.rti                 import RTIThread
 from backend.can                 import CANThread
 from backend.lin                 import LINThread
+from backend.ign                 import IGNThread
 
 from backend.shared.shared_state import shared_state
 
@@ -72,6 +73,7 @@ class VLINK:
             'lin':      LINThread(),
             'adc':      ADCThread(),
             'rti':      RTIThread(),
+            'ign':      IGNThread(),
 
             'vcan':     VCANThread(),
         }
@@ -113,6 +115,8 @@ class VLINK:
         time.sleep(.05)
 
         # Start main threads:
+        self.start_thread('ign')
+        time.sleep(.05)
         self.start_thread('can')
         time.sleep(.05)
         self.start_thread('rti')
@@ -186,6 +190,10 @@ class VLINK:
         if shared_state.toggle_app.is_set():
             self.toggle_thread('app')
             shared_state.toggle_app.clear()
+
+        if shared_state.toggle_ign.is_set():
+            self.toggle_thread('ign')
+            shared_state.toggle_ign.clear()
 
 
     def process_exit_event(self):
@@ -303,7 +311,7 @@ def display_thread_states():
     print("")
     print("Thread states:")
     table_data = [
-        ["Server", "App", "CAN", "LIN", "ADC", "RTI", "VCAN"],
+        ["Server", "App", "CAN", "LIN", "ADC", "RTI", "IGN", "VCAN"],
         [
             shared_state.THREAD_STATES['server'],
             shared_state.THREAD_STATES['app'],
@@ -311,6 +319,7 @@ def display_thread_states():
             shared_state.THREAD_STATES['lin'],
             shared_state.THREAD_STATES['adc'],
             shared_state.THREAD_STATES['rti'],
+            shared_state.THREAD_STATES['ign'],
             shared_state.THREAD_STATES['vcan']
         ]
     ]

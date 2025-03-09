@@ -27,11 +27,13 @@ class SharedState:
         self.toggle_lin = threading.Event()
         self.toggle_adc = threading.Event()
         self.toggle_rti = threading.Event()
+        self.toggle_ign = threading.Event()
 
         self.exit_event = threading.Event()
         self.restart_event = threading.Event()
         self.update_event = threading.Event()
-        self.hdmi_event = threading.Event()
+        self.hdmi_event = threading.Event() 
+        self.ign_event = threading.Event()
 
         self.THREAD_STATES = {
             "server":   False,
@@ -41,6 +43,7 @@ class SharedState:
             "lin":      False,
             "adc":      False,
             "rti":      False,
+            "ign":      False,
 
             "vcan":     False,
         }
