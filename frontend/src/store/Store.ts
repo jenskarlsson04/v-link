@@ -112,6 +112,7 @@ const APP = create(
 
       initialized: false,
       startedUp: false,
+      ignition: true,
 
       windowSize: {
         width: 800,
@@ -149,7 +150,10 @@ const APP = create(
 
       modal: {
         visible: false,
-        content: null,
+        title: null,
+        body: null,
+        button: null,
+        action: null,
       },
 
       wifiState: false,

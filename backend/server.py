@@ -81,11 +81,11 @@ class ServerThread(threading.Thread):
                 if current_ign_state:
                     if shared_state.verbose:
                         print("Ignition ON, sending event to frontend.")
-                    socketio.emit('ign', True, namespace='/')
+                    socketio.emit('ign', True, namespace='/sys')
                 else:
                     if shared_state.verbose:
                         print("Ignition OFF, sending event to frontend.")
-                    socketio.emit('ign', False, namespace='/')
+                    socketio.emit('ign', False, namespace='/sys')
 
                 # Update the previous state to the current state
                 previous_ign_state = current_ign_state
@@ -172,6 +172,8 @@ class ServerThread(threading.Thread):
     def handle_system_task(args):
         if   args == 'reboot':
             subprocess.run("sudo reboot -h now", shell=True)
+        if   args == 'shutdown':
+            subprocess.run("sudo shutdown -h now", shell=True)
         elif args == 'reset':
             settings.reset_settings("app")
             socketio.emit("settings", settings.load_settings("app"), namespace='/app')
@@ -191,5 +193,7 @@ class ServerThread(threading.Thread):
         elif args == 'update':
             print('updating app')
             shared_state.update_event.set()
+        elif args == 'ign':
+            socketio.emit('ign', shared_state.ign_state.is_set(), namespace="/sys")
         else:
             if (shared_state.verbose): print('Unknown action:', args)

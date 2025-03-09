@@ -101,10 +101,13 @@ const Settings = () => {
       Object.assign(dataStores, { [key]: currentModule.settings.sensors })
   });
 
-  const openModal = (content) => {
+  const openModal = (title, body, button, action) => {
     app.update((state) => {
       state.system.modal.visible = true;
-      state.system.modal.content = content
+      state.system.modal.title = title
+      state.system.modal.body = body
+      state.system.modal.button = button
+      state.system.modal.action = action
     })
   };
 
@@ -168,7 +171,7 @@ const Settings = () => {
   // Change Settings
   const handleSettingChange = (selectStore, key, name, targetSetting, currentSettings) => {
     setSave(false)
-    console.log(selectStore, key, name, targetSetting, currentSettings)
+    //console.log(selectStore, key, name, targetSetting, currentSettings)
     const newSettings = structuredClone(currentSettings);
     let convertedValue
     if (selectStore != 'app') {
@@ -178,7 +181,7 @@ const Settings = () => {
       newSettings[key][name].value = convertedValue || targetSetting;
       newSettings[key][name].type = selectStore;
     } else {
-      console.log(key, name, targetSetting)
+      //console.log(key, name, targetSetting)
       newSettings[key][name].value = targetSetting
     }
 
@@ -199,21 +202,13 @@ const Settings = () => {
   function systemTask(request) {
 
     if (['quit', 'reboot', 'restart'].includes(request)) {
-      openModal(
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <Title>Exiting...</Title>
-        </div>
-      )
+      openModal("Exiting...", "", null, null)
       setTimeout(() => {
         console.log('exiting')
         sysChannel.emit("systemTask", request);
       }, 1000)
     } else if (request === 'reset') {
-      openModal(
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <Title>All settings resetted.</Title>
-        </div>
-      );
+      openModal("Reset", "All Settings have been resetted.", null, null)
     } else {
       sysChannel.emit("systemTask", request);
     }
@@ -223,7 +218,7 @@ const Settings = () => {
 
 
   const checkUpdate = async () => {
-    const githubRepo = "LRYMND/v-link"; // Replace with your GitHub repository
+    const githubRepo = "BoostedMoose/v-link"; // Replace with your GitHub repository
 
     try {
       const response = await fetch(
@@ -239,28 +234,12 @@ const Settings = () => {
 
 
       if (latestVersion === app.system.version)
-        openModal(
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <Title>No updates available.</Title>
-          </div>
-        );
+        openModal("No Updates available.", "", null, null)
       else {
-        openModal(
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <Title>Update available!</Title>
-            <Body1>Latest version: {latestVersion}.</Body1>
-            <Body1>Current version: {app.system.version}.</Body1>
-            <Button style={{ marginTop: '20px' }} onClick={() => systemTask('update')}> Update now.</Button>
-          </div>
-        );
+        openModal( "New update available!", `Current: ${app.system.version} | Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
       }
     } catch (error) {
-      openModal(
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <Title>Error checking for updates:</Title>
-          <Body1>{error}</Body1>
-        </div>
-      );
+      openModal("Error checking for updates:", error, null, null)
     }
   }
 
@@ -368,11 +347,8 @@ const Settings = () => {
 
       const handleBinding = (key, setting) => {
         //console.log(key, setting)
-        openModal(
-          <div>
-            <p><strong>Press a Key or ESC.</strong>.</p>
-          </div>
-        );
+        openModal("Press a Key or ESC.", "", null, null)
+
         // Define the key press handler
         const handleKeyPress = (event) => {
           if (event.code === 'Escape') {

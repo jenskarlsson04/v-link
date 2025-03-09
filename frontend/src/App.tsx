@@ -119,7 +119,10 @@ function App() {
             />}
             {<Modal
               isOpen={system.modal.visible}
-              content={system.modal.content}
+              title={system.modal.title}
+              body={system.modal.body}
+              button={system.modal.button}
+              action={system.modal.action}
               onClose={() =>
                 app.update((state) => {
                   state.system.modal.visible = false;

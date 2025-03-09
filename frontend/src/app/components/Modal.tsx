@@ -1,6 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import styled, { useTheme } from 'styled-components';
+import { Typography } from '../../theme/styles/Typography';
+import { Button } from '../../theme/styles/Inputs';
+
+
 
 
 const Content = styled.div`
@@ -11,23 +15,16 @@ const Content = styled.div`
     height: 100%;
     background-color: rgba(0, 0, 0, 0.75);
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     textSize: 3rem;
-    color:'#DBDBDB'
+    color:'#DBDBDB';
+    gap: 10px;
 `
 
-const Bla = styled.div`
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  text-align: center;
-  positon: relative;
-`
-
-const Button = styled.button`
+const Exit = styled.button`
   position: absolute;
   top: 50px;
   right: 30px;
@@ -38,15 +35,23 @@ const Button = styled.button`
   color: #DBDBDB;
 `
 
-const Modal = ({ isOpen, onClose, content }) => {
+const Modal = ({ isOpen, onClose, title, body, button, action }) => {
+  const Body1 = Typography.Body1
+  const Title = Typography.Title
+
   if (!isOpen) return null; // Don't render the modal if it's not open
 
   return ReactDOM.createPortal(
     <Content>
-      {content}
-      <Button onClick={onClose}>
+      <Title> {title} </Title>
+      <Body1>{body} </Body1>
+      {action ?
+        <Button style={{width: '300px', background: '#151515'}} onClick={action}>
+          {button}
+        </Button> : <></>}
+      <Exit onClick={onClose}>
         X
-      </Button>
+      </Exit>
     </Content>,
     document.getElementById('root') // The modal renders in this DOM element
   );
