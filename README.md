@@ -141,7 +141,7 @@ dtoverlay=mcp2515-can1,oscillator=16000000,interrupt=24
 dtoverlay=mcp2515-can2,oscillator=16000000,interrupt=22
 
 #Configure IGN logic
-dtoverlay=gpio-shutdown,active_low=0,gpio_pull=up,gpio_pin=1
+dtoverlay=pi3-disable-bt
 dtoverlay=gpio-poweroff,gpiopin=0
 
 #No Splash on boot
@@ -166,7 +166,7 @@ dtoverlay=mcp2515-can1,oscillator=16000000,interrupt=24
 dtoverlay=mcp2515-can2,oscillator=16000000,interrupt=22
 
 #Configure IGN logic
-dtoverlay=gpio-shutdown,active_low=0,gpio_pull=up,gpio_pin=1
+dtoverlay=pi3-disable-bt
 dtoverlay=gpio-poweroff,gpiopin=0
 
 #No Splash on boot
@@ -192,7 +192,7 @@ dtoverlay=mcp2515-can1,oscillator=16000000,interrupt=24
 dtoverlay=mcp2515-can2,oscillator=16000000,interrupt=22
 
 #Configure IGN logic
-dtoverlay=gpio-shutdown,active_low=0,gpio_pull=up,gpio_pin=1
+dtoverlay=pi3-disable-bt
 dtoverlay=gpio-poweroff,gpiopin=0
 
 #No Splash on boot
