@@ -101,20 +101,14 @@ const Settings = () => {
       Object.assign(dataStores, { [key]: currentModule.settings.sensors })
   });
 
-  /* Open Modal */
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState<ReactNode>(null); // State for modal content
-
-  const openModal = (content) => {
-    // Open the modal with dynamic content
+  const openModal = (title, body, button, action) => {
     app.update((state) => {
-      state.system.modal = true;
-    });
-    setModalContent(content);
-    setIsModalOpen(true);
-    app.update((state) => {
-      state.system.modal = false;
-    });
+      state.system.modal.visible = true;
+      state.system.modal.title = title
+      state.system.modal.body = body
+      state.system.modal.button = button
+      state.system.modal.action = action
+    })
   };
 
   /* Add Settings */
@@ -177,7 +171,7 @@ const Settings = () => {
   // Change Settings
   const handleSettingChange = (selectStore, key, name, targetSetting, currentSettings) => {
     setSave(false)
-    console.log(selectStore, key, name, targetSetting, currentSettings)
+    //console.log(selectStore, key, name, targetSetting, currentSettings)
     const newSettings = structuredClone(currentSettings);
     let convertedValue
     if (selectStore != 'app') {
@@ -187,7 +181,7 @@ const Settings = () => {
       newSettings[key][name].value = convertedValue || targetSetting;
       newSettings[key][name].type = selectStore;
     } else {
-      console.log(key, name, targetSetting)
+      //console.log(key, name, targetSetting)
       newSettings[key][name].value = targetSetting
     }
 
@@ -206,33 +200,25 @@ const Settings = () => {
 
   // System Tasks
   function systemTask(request) {
-    
-    if (['quit', 'reboot', 'restart'].includes(request)) {
-      openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-        <Title>Exiting...</Title>
-      </div>
-      );
 
+    if (['quit', 'reboot', 'restart'].includes(request)) {
+      openModal("Exiting...", "Please wait while the app is closing.", null, null)
       setTimeout(() => {
+        console.log('exiting')
         sysChannel.emit("systemTask", request);
       }, 1000)
     } else if (request === 'reset') {
-      openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-        <Title>All settings resetted.</Title>
-      </div>
-      );
+      openModal("Reset", "All Settings have been resetted.", null, null)
     } else {
       sysChannel.emit("systemTask", request);
     }
-    
+
     setReset(true)
   }
 
 
   const checkUpdate = async () => {
-    const githubRepo = "LRYMND/v-link"; // Replace with your GitHub repository
+    const githubRepo = "BoostedMoose/v-link"; // Replace with your GitHub repository
 
     try {
       const response = await fetch(
@@ -248,28 +234,12 @@ const Settings = () => {
 
 
       if (latestVersion === app.system.version)
-        openModal(
-          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-            <Title>No updates available.</Title>
-          </div>
-        );
+        openModal("No Updates available.", "Check back again later :)", null, null)
       else {
-        openModal(
-          <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-            <Title>Update available!</Title>
-            <Body1>Latest version: {latestVersion}.</Body1>
-            <Body1>Current version: {app.system.version}.</Body1>
-            <Button style={{marginTop: '20px'}} onClick={() => systemTask('update')}> Update now.</Button>
-          </div>
-        );
+        openModal("New update available!", `Current: ${app.system.version} \n\n Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
       }
     } catch (error) {
-      openModal(
-        <div style={{display: 'flex', flexDirection:'column', alignItems: 'center', justifyContent: 'center'}}>
-          <Title>Error checking for updates:</Title>
-          <Body1>{error}</Body1>
-        </div>
-      );
+      openModal("Error checking for updates:", error, null, null)
     }
   }
 
@@ -339,22 +309,23 @@ const Settings = () => {
       // Get options
       //Check if value is a number or boolean
       const isText = (content.type === 'text')
-      console.log(content)
+      //console.log(content)
 
       const dropdown = (isText || typeof value === 'number' || typeof value === 'boolean' || key.includes('bindings'))
         ? null                                                                    //Yes? Return null
         : (content.options || Object.keys(dataOptions).map((key) =>               //No?  Create dropdown from options
           key
         ))
-      console.log(content.options, dataOptions)
-      console.log(dropdown)
+      //console.log(content.options, dataOptions)
+      //console.log(dropdown)
+
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
 
 
       const handleChange = (event) => {
-        console.log(event)
+        //console.log(event)
         const { name, value, checked, type } = event.target;                      // Grab info from the handler
         const newValue = type === 'checkbox' ? checked :                          // Check if type is a boolean
           type === 'number' ? Number(value) : value;               // Check if type is a number
@@ -368,19 +339,16 @@ const Settings = () => {
         }
 
         const targetSetting = isBoolean ? checked : newValue                      // Handle targetSetting based on type
-        console.log(name)
+        //console.log(name)
 
         handleSettingChange(selectStore, key, name, targetSetting, settingsObj);     // Execute change of settings
       };
 
 
       const handleBinding = (key, setting) => {
-        console.log(key, setting)
-        openModal(
-          <div>
-            <p><strong>Press a Key or ESC.</strong>.</p>
-          </div>
-        );
+        //console.log(key, setting)
+        openModal(`${app.settings[key][setting].label}`, "Press a key to assign or ESC to abort.", null, null)
+
         // Define the key press handler
         const handleKeyPress = (event) => {
           if (event.code === 'Escape') {
@@ -389,7 +357,6 @@ const Settings = () => {
             handleSettingChange("app", key, setting, event.code, settingsObj);
           }
 
-          setIsModalOpen(false); // Close the modal
           document.removeEventListener('keydown', handleKeyPress); // Clean up listener
         };
 
@@ -448,18 +415,40 @@ const Settings = () => {
   }
 
 
+  //Fixing Mouse Wheel Scrolling for IndianaScroll.
+  const scrollRef = useRef(null);
+
+  // Make sure wheel event is always attached after every render.
+  useEffect(() => {
+    const handleWheel = (event) => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop += event.deltaY; // Scrolls vertically
+      }
+    };
+
+    const container = scrollRef.current;
+    if (container) {
+      container.addEventListener("wheel", handleWheel);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("wheel", handleWheel);
+      }
+    };
+  }, [system.settingPage]); // Make sure useEffect runs again on reset
+
+
   return (
     <Container>
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {modalContent}
-      </Modal>
       <ScrollContainer
         className="scroll-container"
         style={{ width: '100%', height: '100%' }}
         horizontal={false}
         hideScrollbars={true}
         ignoreElements='input, select'
-        key={JSON.stringify(reset)}
+        key={`${system.settingPage}-${reset}`} // This will force a complete re-render when page changes
+        innerRef={scrollRef}
       >
         {system.settingPage === 1 &&
           <>

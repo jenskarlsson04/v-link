@@ -18,6 +18,8 @@ Object.keys(modules).forEach(module => {
   socket[module] = io(`ws://localhost:4001/${module}`);
 });
 
+const sysChannel = io("ws://localhost:4001/sys")
+
 export const Socket = () => {
 
   // Initialize all Zustand stores and map them to module names
@@ -61,8 +63,14 @@ export const Socket = () => {
       store[module].update((state) => {
         state.settings = data;
       });
-
     };
+
+    const handleIgnition = () => (ign_state) => {
+      console.log('ignstate: ', ign_state)
+      store['app'].update((state) => {
+        state.system.ignition = ign_state
+      });
+    } 
 
     // Handles state updates for each module
     const handleState = (module) => (data) => {
@@ -86,11 +94,16 @@ export const Socket = () => {
       socket[module].emit('load');
     });
 
+    sysChannel.on('ign', handleIgnition())
+    sysChannel.emit('systemTask', 'ign')
+
     // Clean up listeners on component unmount
     return () => {
       Object.keys(modules).forEach(module => {
         socket[module].off('settings', handleSettings(module));
         socket[module].off('state', handleState(module));
+        sysChannel.off('ign', handleIgnition())
+
       });
     };
   }, []);

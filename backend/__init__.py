@@ -8,6 +8,7 @@ from .can                 import CANThread
 from .lin                 import LINThread
 from .adc                 import ADCThread
 from .rti                 import RTIThread
+from .ign                 import IGNThread
 
 
 from .dev.vcan            import VCANThread

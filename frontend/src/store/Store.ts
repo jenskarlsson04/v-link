@@ -109,10 +109,10 @@ const APP = create(
       lastKey: '',
 
       settingPage: 1,
-      modal: false,
 
       initialized: false,
       startedUp: false,
+      ignition: true,
 
       windowSize: {
         width: 800,
@@ -146,6 +146,14 @@ const APP = create(
         sideBar: true,
         content: true,
         carplay: false,
+      },
+
+      modal: {
+        visible: false,
+        title: null,
+        body: null,
+        button: null,
+        action: null,
       },
 
       wifiState: false,
