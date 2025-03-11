@@ -66,7 +66,7 @@ function Cardata() {
   useEffect(() => {
     const startShutdownTimer = () => {
       shutdownTimer.current = setTimeout(() => {
-        //sysChannel.emit("systemTask", "shutdown");
+        sysChannel.emit("systemTask", "shutdown");
       }, 10000);
     };
 
