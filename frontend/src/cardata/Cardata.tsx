@@ -66,9 +66,7 @@ function Cardata() {
   useEffect(() => {
     const startShutdownTimer = () => {
       shutdownTimer.current = setTimeout(() => {
-
-        sysChannel.emit("systemTask", "shutdown");
-        // Add logic to actually shut down the system if needed
+        //sysChannel.emit("systemTask", "shutdown");
       }, 10000);
     };
 
@@ -80,7 +78,7 @@ function Cardata() {
         state.system.modal.visible = true;
         state.system.modal.title = "Ignition Off.";
         state.system.modal.body =
-          "System will shut down in 10 seconds to prevent battery drain. Click to dismiss for 5 minutes.";
+          "System will shut down in 10 seconds to prevent battery drain. \n Click to dismiss for 5 minutes.";
         state.system.modal.button = "DISMISS";
         state.system.modal.action = () => {
           if (shutdownTimer.current) clearTimeout(shutdownTimer.current); // Cancel shutdown timer
@@ -91,7 +89,7 @@ function Cardata() {
               state.system.modal.visible = true;
             });
             startShutdownTimer(); // Restart 10-second timer when modal appears again
-          }, 5000); // 5 minutes
+          }, 5 * 60 * 1000); // 5 minutes
 
           // Hide modal after clicking dismiss
           app.update((state) => {

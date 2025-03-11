@@ -202,7 +202,7 @@ const Settings = () => {
   function systemTask(request) {
 
     if (['quit', 'reboot', 'restart'].includes(request)) {
-      openModal("Exiting...", "", null, null)
+      openModal("Exiting...", "Please wait while the app is closing.", null, null)
       setTimeout(() => {
         console.log('exiting')
         sysChannel.emit("systemTask", request);
@@ -234,9 +234,9 @@ const Settings = () => {
 
 
       if (latestVersion === app.system.version)
-        openModal("No Updates available.", "", null, null)
+        openModal("No Updates available.", "Check back again later :)", null, null)
       else {
-        openModal( "New update available!", `Current: ${app.system.version} | Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
+        openModal( "New update available!", `Current: ${app.system.version} \n\n Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
       }
     } catch (error) {
       openModal("Error checking for updates:", error, null, null)
@@ -347,7 +347,7 @@ const Settings = () => {
 
       const handleBinding = (key, setting) => {
         //console.log(key, setting)
-        openModal("Press a Key or ESC.", "", null, null)
+        openModal(`${app.settings[key][setting].label}`, "Press a key to assign or ESC to abort.", null, null)
 
         // Define the key press handler
         const handleKeyPress = (event) => {
