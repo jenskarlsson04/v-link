@@ -19,13 +19,11 @@ class IGNThread(threading.Thread):
             # Free GPIO pin if it's already claimed
             try:
                 lgpio.gpio_free(self.chip, self.IGNITION_PIN)
-                print(f"Successfully freed GPIO {self.IGNITION_PIN}")
             except lgpio.error:
-                print(f"GPIO {self.IGNITION_PIN} is not allocated.")
+                print(f"GPIO {self.IGNITION_PIN} ready.")
             
             # Now claim the GPIO pin
             lgpio.gpio_claim_input(self.chip, self.IGNITION_PIN)
-            print(f"Successfully claimed GPIO {self.IGNITION_PIN}")
             
             # Monitor ignition pin
             self.monitor_ignition()
@@ -33,12 +31,11 @@ class IGNThread(threading.Thread):
             print(f"Error during GPIO initialization: {e}")
 
     def stop_thread(self):
-        print("Stopping Ignition thread.")
+        print("Stopping IGN thread.")
         self._stop_event.set()
         # Free GPIO pin when stopping
         try:
             lgpio.gpio_free(self.chip, self.IGNITION_PIN)
-            print(f"Successfully freed GPIO {self.IGNITION_PIN}")
         except lgpio.error as e:
             print(f"Error freeing GPIO {self.IGNITION_PIN}: {e}")
         lgpio.gpiochip_close(self.chip)  # Close GPIO chip
