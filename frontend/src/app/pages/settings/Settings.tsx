@@ -236,7 +236,7 @@ const Settings = () => {
       if (latestVersion === app.system.version)
         openModal("No Updates available.", "Check back again later :)", null, null)
       else {
-        openModal( "New update available!", `Current: ${app.system.version} \n\n Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
+        openModal("New update available!", `Current: ${app.system.version} \n\n Latest: ${latestVersion}`, "UPDATE NOW", () => systemTask('update'))
       }
     } catch (error) {
       openModal("Error checking for updates:", error, null, null)
@@ -318,7 +318,7 @@ const Settings = () => {
         ))
       //console.log(content.options, dataOptions)
       //console.log(dropdown)
-      
+
       // Check for boolean setting
       const isBoolean = typeof value === 'boolean';                               // Checks if the setting is a boolean.
       const isBinding = key.includes('bindings')                                  // Checks if the setting handles bindings
@@ -415,6 +415,30 @@ const Settings = () => {
   }
 
 
+  //Fixing Mouse Wheel Scrolling for IndianaScroll.
+  const scrollRef = useRef(null);
+
+  // Make sure wheel event is always attached after every render.
+  useEffect(() => {
+    const handleWheel = (event) => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop += event.deltaY; // Scrolls vertically
+      }
+    };
+
+    const container = scrollRef.current;
+    if (container) {
+      container.addEventListener("wheel", handleWheel);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener("wheel", handleWheel);
+      }
+    };
+  }, [system.settingPage]); // Make sure useEffect runs again on reset
+
+
   return (
     <Container>
       <ScrollContainer
@@ -423,7 +447,8 @@ const Settings = () => {
         horizontal={false}
         hideScrollbars={true}
         ignoreElements='input, select'
-        key={JSON.stringify(reset)}
+        key={`${system.settingPage}-${reset}`} // This will force a complete re-render when page changes
+        innerRef={scrollRef}
       >
         {system.settingPage === 1 &&
           <>
