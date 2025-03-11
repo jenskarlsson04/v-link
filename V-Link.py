@@ -37,6 +37,7 @@ def activate_venv():
 
 activate_venv()
 
+import threading
 import time
 import argparse
 
@@ -66,16 +67,16 @@ class VLINK:
         self.rpiModel = ""
         self.rpiProtocol =""
         self.threads = {
-            'server':   ServerThread(),
+            'server':   ServerThread,
 
-            'app':      APPThread(),
-            'can':      CANThread(),
-            'lin':      LINThread(),
-            'adc':      ADCThread(),
-            'rti':      RTIThread(),
-            'ign':      IGNThread(),
-
-            'vcan':     VCANThread(),
+            'app':      APPThread,
+            'can':      CANThread,
+            'lin':      LINThread,
+            'adc':      ADCThread,
+            'rti':      RTIThread,
+            'ign':      IGNThread,
+          
+            'vcan':     VCANThread,
         }
 
     def detect_rpi(self):
@@ -110,11 +111,10 @@ class VLINK:
             return 'Not running on a Raspberry Pi or file at /proc/device-tree/model not found.'
     
     def start_modules(self):
-        if(shared_state.vCan):
+        if shared_state.vCan:
             self.start_thread('vcan')
-        time.sleep(.05)
 
-        # Start main threads:
+        time.sleep(.05)
         self.start_thread('ign')
         time.sleep(.05)
         self.start_thread('can')
@@ -126,36 +126,43 @@ class VLINK:
         self.start_thread('adc')
         time.sleep(.5)
         self.start_thread('app')
+        
 
     def start_thread(self, thread_name):
-        thread_class = self.threads[thread_name].__class__
+        if thread_name in shared_state.THREADS:
+            thread = shared_state.THREADS[thread_name]
+            if isinstance(thread, threading.Thread) and thread.is_alive():
+                if shared_state.verbose:
+                    print(f'{thread_name} thread is already running.')
+                return
 
-        if not self.threads[thread_name].is_alive():
-            self.threads[thread_name] = thread_class()
-            thread = self.threads[thread_name]
-            thread.daemon = True
-            thread.start()
-            shared_state.THREAD_STATES[thread_name] = True
-            if(shared_state.verbose): print(f'{thread_name} thread started.')
-        else:
-            if(shared_state.verbose): print(f'{thread_name} thread is already running.')
+        thread_class = self.threads[thread_name]
+        thread = thread_class() # instantiate thread
+        thread.daemon = True
+        thread.start()
+
+        shared_state.THREADS[thread_name] = thread
+        if(shared_state.verbose):
+            print(f'{thread_name} thread started.')
 
 
     def stop_thread(self, thread_name):
-        thread = self.threads[thread_name]
-        if thread.is_alive():
-            if(shared_state.verbose): print(f'Stopping {thread_name} thread.')
-            thread.stop_thread()
-            try:
-                thread.join()
-            except Exception as e:
-                print(e)
-            shared_state.THREAD_STATES[thread_name] = False
-            if(shared_state.verbose): print(f'{thread_name} thread stopped.')
+        if thread_name in shared_state.THREADS:
+            thread = shared_state.THREADS[thread_name]
+            if isinstance(thread, threading.Thread) and thread.is_alive():
+                if(shared_state.verbose): print(f'Stopping {thread_name} thread.')
+                try:
+                    thread.stop_thread()
+                    thread.join()
+                except Exception as e:
+                    print(f"Error stopping thread {thread_name} with error: {e}")
+                finally:
+                    shared_state.THREADS[thread_name] = None
+                    if(shared_state.verbose): print(f'{thread_name} thread stopped.')
 
 
     def toggle_thread(self, thread_name):
-        if shared_state.THREAD_STATES[thread_name]:
+        if shared_state.THREADS[thread_name]:
             self.stop_thread(thread_name)
             if(shared_state.verbose): print('stop thread')
         else:
@@ -164,10 +171,14 @@ class VLINK:
 
 
     def join_threads(self):
-        for thread_name, thread in self.threads.items():
-            self.stop_thread(thread_name)
-            if thread.is_alive():
-                shared_state.THREAD_STATES[thread_name] = False
+        for thread_name, thread in shared_state.THREADS.items():
+            if isinstance(thread, threading.Thread) and thread.is_alive():
+                self.stop_thread(thread_name)
+            
+    def print_thread_states(self):
+        for thread_name, thread in shared_state.THREADS.items():
+            state = 'Alive' if isinstance(thread, threading.Thread) and thread.is_alive() else 'Not alive'
+            print(f'{thread_name} Thread: {state}')
 
 
     def process_toggle_event(self):
@@ -209,8 +220,9 @@ class VLINK:
     def process_restart_event(self):
         if shared_state.restart_event.is_set():
             shared_state.restart_event.clear()
-            for thread_name in self.threads:
-                if(thread_name != 'server'):
+
+            for thread_name, thread in shared_state.THREADS.items():
+                if thread_name != 'server' and isinstance(thread, threading.Thread) and thread.is_alive():
                     self.stop_thread(thread_name)
                        
             time.sleep(.5)
@@ -263,14 +275,6 @@ class VLINK:
 
 
 
-    def print_thread_states(self):
-        if(shared_state.verbose):
-            for thread_name, thread in self.threads.items():
-                state = 'Alive' if thread.is_alive() else 'Not Alive'
-                print(f'{thread_name} Thread: {state}')
-                
-
-
 def clear_screen():
     if os.name == 'nt':
         os.system('cls')
@@ -306,24 +310,19 @@ def display_thread_states():
     # Display the app name and version
     print("V-Link 2.2.1 | Boosted Moose")
     print('Device: ', vlink.rpiModel, ' | ', vlink.rpiProtocol)
+    print(f"RTI Screen: {'Up' if shared_state.rtiStatus else 'Down'}")
     print("")
     print("=" * 52)  # Decorative line
     print("")
     print("Thread states:")
-    table_data = [
-        ["Server", "App", "CAN", "LIN", "ADC", "RTI", "IGN", "VCAN"],
-        [
-            shared_state.THREAD_STATES['server'],
-            shared_state.THREAD_STATES['app'],
-            shared_state.THREAD_STATES['can'],
-            shared_state.THREAD_STATES['lin'],
-            shared_state.THREAD_STATES['adc'],
-            shared_state.THREAD_STATES['rti'],
-            shared_state.THREAD_STATES['ign'],
-            shared_state.THREAD_STATES['vcan']
-        ]
+
+    thread_names = ["Server", "App", "CAN", "LIN", "ADC", "RTI", "VCAN"]
+    thread_states = [
+        shared_state.THREADS.get(name.lower(), None).is_alive() if shared_state.THREADS.get(name.lower()) else False
+        for name in thread_names
     ]
 
+    table_data = [thread_names, thread_states]
     table = tabulate(table_data, tablefmt="fancy_grid")
     print("\n" + table)
 
@@ -351,6 +350,7 @@ if __name__ == '__main__':
 
     # Start main threads:
     vlink.start_modules()
+    # if(shared_state.verbose):
     vlink.print_thread_states()
 
     try:

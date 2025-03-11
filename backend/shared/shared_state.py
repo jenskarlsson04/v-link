@@ -39,17 +39,17 @@ class SharedState:
 
         self.shutdown_pi = threading.Event()
 
-        self.THREAD_STATES = {
-            "server":   False,
-            "app":      False,
-            
-            "can":      False,
-            "lin":      False,
-            "adc":      False,
-            "rti":      False,
-            "ign":      False,
 
-            "vcan":     False,
+        # store threads
+        self.THREADS = {
+            "server":   None,
+            "app":      None,
+            "can":      None,
+            "lin":      None,
+            "adc":      None,
+            "rti":      None,
+            "ign":      None,
+            "vcan":     None,
         }
 
 shared_state = SharedState()
