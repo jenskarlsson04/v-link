@@ -49,7 +49,7 @@ function App() {
     if (system.switch) {
 
       // If user is not switching the page, send control to CarPlay
-      if (event.code !== system.switch) {
+      if (event.code !== system.switch && system.view === 'Carplay') {
         if (Object.values(mmi!.bindings).includes(event.code)) {
           const action = Object.keys(mmi!.bindings).find(key =>
             mmi!.bindings[key] === event.code
