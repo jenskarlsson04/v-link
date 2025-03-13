@@ -54,6 +54,7 @@ from backend.adc                 import ADCThread
 from backend.rti                 import RTIThread
 from backend.can                 import CANThread
 from backend.lin                 import LINThread
+from backend.ign                 import IGNThread
 
 from backend.shared.shared_state import shared_state
 
@@ -73,7 +74,8 @@ class VLINK:
             'lin':      LINThread,
             'adc':      ADCThread,
             'rti':      RTIThread,
-
+            'ign':      IGNThread,
+          
             'vcan':     VCANThread,
         }
 
@@ -111,7 +113,10 @@ class VLINK:
     def start_modules(self):
         if shared_state.vCan:
             self.start_thread('vcan')
-        
+
+        time.sleep(.05)
+        self.start_thread('ign')
+        time.sleep(.05)
         self.start_thread('can')
         time.sleep(.05)
         self.start_thread('rti')
@@ -121,6 +126,7 @@ class VLINK:
         self.start_thread('adc')
         time.sleep(.5)
         self.start_thread('app')
+        
 
     def start_thread(self, thread_name):
         if thread_name in shared_state.THREADS:
@@ -195,6 +201,10 @@ class VLINK:
         if shared_state.toggle_app.is_set():
             self.toggle_thread('app')
             shared_state.toggle_app.clear()
+
+        if shared_state.toggle_ign.is_set():
+            self.toggle_thread('ign')
+            shared_state.toggle_ign.clear()
 
 
     def process_exit_event(self):
@@ -334,6 +344,9 @@ if __name__ == '__main__':
     shared_state.vLin = args.vlin
     shared_state.vite = args.vite
     shared_state.isKiosk = args.nokiosk
+
+    # Update ign status when app launches
+    shared_state.ign_state.set()
 
     # Start main threads:
     vlink.start_modules()

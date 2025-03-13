@@ -137,6 +137,9 @@ class LINThread(threading.Thread):
 
     def _process_incoming_byte(self, byte):
         try:
+            if not byte:  # Check for empty data
+                return
+            
             n = self.lin_frame.num_bytes()
             sync_id = bytes.fromhex(self.config.lin_settings["sync_id"][2:])
 

@@ -9,6 +9,8 @@ import { Socket } from './socket/Socket';
 
 import Splash from './app/Splash';
 import Content from './app/Content';
+import Modal from './app/components/Modal';
+
 
 import Carplay from './carplay/Carplay';
 import Cardata from './cardata/Cardata';
@@ -76,24 +78,24 @@ function App() {
   /* Observe container resizing and update dimensions. */
   useEffect(() => {
     const handleResize = () => {
-      if(containerRef.current)
-      if (containerRef.current && system.startedUp) {
+      if (containerRef.current)
+        if (containerRef.current && system.startedUp) {
 
-        const carplayFullscreen = containerRef.current.offsetHeight;
-        const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value;
+          const carplayFullscreen = containerRef.current.offsetHeight;
+          const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value;
 
-        console.log(carplayFullscreen, carplayWindowed, app.settings.side_bars.dashBar.value);
+          console.log(carplayFullscreen, carplayWindowed, app.settings.side_bars.dashBar.value);
 
-        app.update((state) => {
-          state.system.windowSize.width = containerRef.current.offsetWidth;
-          state.system.windowSize.height = containerRef.current.offsetHeight;
+          app.update((state) => {
+            state.system.windowSize.width = containerRef.current.offsetWidth;
+            state.system.windowSize.height = containerRef.current.offsetHeight;
 
-          state.system.carplaySize.width = containerRef.current.offsetWidth;
-          state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed);
-        });
+            state.system.carplaySize.width = containerRef.current.offsetWidth;
+            state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed);
+          });
 
-        setReady(true);
-      }
+          setReady(true);
+        }
     };
 
     const resizeObserver = new ResizeObserver(handleResize);
@@ -108,11 +110,25 @@ function App() {
         <Cardata />
         <Splash />
 
+
         {system.startedUp ? (
           <ThemeProvider theme={theme}>
             {ready && <Carplay
               commandCounter={commandCounter}
               command={keyCommand}
+            />}
+            {<Modal
+              isOpen={system.modal.visible}
+              title={system.modal.title}
+              body={system.modal.body}
+              button={system.modal.button}
+              action={system.modal.action}
+              onClose={() =>
+                app.update((state) => {
+                  state.system.modal.visible = false;
+                  //state.system.modal.content = null
+                })
+              }
             />}
             {<Content />}
           </ThemeProvider>

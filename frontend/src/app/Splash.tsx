@@ -19,7 +19,7 @@ const Container = styled.div.withConfig({
   shouldForwardProp: (prop) => !['fadeOutAnimation', 'fadeDuration'].includes(prop)
 })`
   position: absolute;
-  z-index: 4;
+  z-index: 5;
   top: 0;
   left: 0;
 
