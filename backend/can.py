@@ -202,9 +202,12 @@ class CANListenThread(threading.Thread):
         self._stop_event = stop_event
         self.can_settings = can_settings
 
-        # Store expected reply IDs as a set for fast lookup
-        self.expected_reply_ids = {sensor["rep_id"][0] for sensor in sensors}
-        self.sensors_by_id = {sensor["rep_id"][0]: sensor for sensor in sensors}
+        self.sensors_by_id = {}
+        for sensor in sensors:
+            rep_id = sensor["rep_id"][0] 
+            if rep_id not in self.sensors_by_id:
+                self.sensors_by_id[rep_id] = []  # Initialize with an empty list
+            self.sensors_by_id[rep_id].append(sensor)
 
         self.zero_message = [int(byte, 16) for byte in can_settings['zero_message']]
         self.control_reply_id = int(can_settings['rep_id'], 16)
@@ -212,7 +215,6 @@ class CANListenThread(threading.Thread):
 
         self.control_buttons = {k: self.parse_can_control_values(v) for k, v in can_settings['button'].items()}
         self.control_joystick = {k: self.parse_can_control_values(v) for k, v in can_settings['joystick'].items()}
-    
         self.button_handler = ButtonHandler(
             can_settings['click_timeout'],
             can_settings['long_press_duration']
@@ -235,26 +237,39 @@ class CANListenThread(threading.Thread):
 
             try:
                 # low timeout to minimize processing delay
-                data = self.can_bus.recv(.001)
+                data = self.can_bus.recv(.01)
 
                 if data:
                     if self.can_settings['enabled'] and data.arbitration_id == self.control_reply_id:
                         self.process_control(data)
 
-                    if data.arbitration_id in self.expected_reply_ids:
-                        self.process_message(data)
+                    if data.arbitration_id not in self.sensors_by_id:
+                        return
+
+                    self.process_message(data)
             except Exception as e:
                 print("CAN listen error:", e)
                 time.sleep(10) # temp
 
     def process_message(self, data):
-        sensor = self.sensors_by_id.get(data.arbitration_id)
-        if sensor:
-            value = (data.data[5] << 8) | data.data[6] if sensor["is_16bit"] else data.data[5]
-            converted_value = eval(sensor["scale"], {"value": value})
+        try:
+            message_bytes = list(data.data)
 
-            data_str = f"{sensor['id']}:{float(converted_value)}"
-            self.emit_data_to_frontend(data_str)
+            for sensor in self.sensors_by_id[data.arbitration_id]:
+                expected_bytes = sensor["message_bytes"]
+
+                if (
+                    message_bytes[3] == expected_bytes[3] and  # match parameter0
+                    message_bytes[4] == expected_bytes[4] # match parameter1
+                ):
+                    value = ((message_bytes[5] << 8) | message_bytes[6] if sensor["is_16bit"] else message_bytes[5])
+                    converted_value = eval(sensor["scale"], {"value": value})
+                    
+                    self.emit_data_to_frontend(f"{sensor['id']}:{float(converted_value)}")
+                    sys.stdout.flush()
+                    return
+        except Exception as e:
+            print("CAN message parse error:", e)
 
     def emit_data_to_frontend(self, data):
         if self.client and self.client.connected:
