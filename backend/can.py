@@ -9,7 +9,7 @@ from .shared.shared_state import shared_state
 
 class Config:
     def __init__(self):
-        self.canSettings = settings.load_settings("can")
+        self.can_settings = settings.load_settings("can")
         # self.timeout = self.canSettings["timeout"]
         self.interfaces = []
         self.sensors = {}
@@ -17,7 +17,7 @@ class Config:
         self.load_sensors()
 
     def load_interfaces(self):
-        for iface in self.canSettings["interfaces"]:
+        for iface in self.can_settings["interfaces"]:
             if iface["enabled"]:
                 self.interfaces.append({
                     "channel": iface["channel"],
@@ -26,7 +26,7 @@ class Config:
                 })
 
     def load_sensors(self):
-        for key, sensor in self.canSettings['sensors'].items():
+        for key, sensor in self.can_settings['sensors'].items():
             try:
                 iface = sensor["interface"]
 
@@ -83,7 +83,7 @@ class CANThread(threading.Thread):
         self.send_threads = []
         self.listen_threads = []
 
-        self.canSettings = self.config.canSettings["controls"]
+        self.can_control_settings = self.config.can_settings["controls"]
 
     def run(self):
         self.connect_to_socketio()
@@ -100,7 +100,7 @@ class CANThread(threading.Thread):
             filtered_sensors = [sensor for sensor in sensors if sensor.get("type") != "internal"]
             send_thread = CANSendThread(can_bus, filtered_sensors, self.client, self._stop_event)
 
-            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event, self.canSettings)
+            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event, self.can_control_settings)
 
             self.send_threads.append(send_thread)
             self.listen_threads.append(listen_thread)
@@ -135,7 +135,7 @@ class CANThread(threading.Thread):
         for thread in self.send_threads + self.listen_threads:
             thread.join()
         for channel, bus in self.can_buses.items():
-            # bus.shutdown()
+            bus.shutdown()
             print("CAN Bus shutting down!")
 
     def connect_to_socketio(self):
@@ -170,7 +170,7 @@ class CANSendThread(threading.Thread):
                     try:
                         if current_time - sensor["last_requested_time"] >= sensor["refresh_rate"]:
                             self.request(sensor)
-                            sensor["last_requested_time"] = current_time  # Update last request time
+                            sensor["last_requested_time"] = current_time
 
                             next_send_time = min(next_send_time, current_time + sensor["refresh_rate"])
                             time.sleep(2) # temp debugging
@@ -195,12 +195,12 @@ class CANSendThread(threading.Thread):
             print(f"CAN send error: {e}")
 
 class CANListenThread(threading.Thread):
-    def __init__(self, can_bus, sensors, client, stop_event, can_settings):
+    def __init__(self, can_bus, sensors, client, stop_event, can_control_settings):
         super(CANListenThread, self).__init__()
         self.can_bus = can_bus
         self.client = client
         self._stop_event = stop_event
-        self.can_settings = can_settings
+        self.can_settings = can_control_settings
 
         self.sensors_by_id = {}
         for sensor in sensors:
@@ -209,15 +209,16 @@ class CANListenThread(threading.Thread):
                 self.sensors_by_id[rep_id] = []  # Initialize with an empty list
             self.sensors_by_id[rep_id].append(sensor)
 
-        self.zero_message = [int(byte, 16) for byte in can_settings['zero_message']]
-        self.control_reply_id = int(can_settings['rep_id'], 16)
-        self.control_byte_count = can_settings['control_byte_count']
+        self.zero_message = [int(byte, 16) for byte in can_control_settings['zero_message']]
+        self.control_reply_id = int(can_control_settings['rep_id'], 16)
+        self.control_byte_count = can_control_settings['control_byte_count']
 
-        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in can_settings['button'].items()}
-        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in can_settings['joystick'].items()}
+        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in can_control_settings['button'].items()}
+        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in can_control_settings['joystick'].items()}
         self.button_handler = ButtonHandler(
-            can_settings['click_timeout'],
-            can_settings['long_press_duration']
+            can_control_settings['click_timeout'],
+            can_control_settings['long_press_duration'],
+            can_control_settings['mouse_speed']
         )
 
     def parse_can_control_values(self, value):
@@ -232,10 +233,12 @@ class CANListenThread(threading.Thread):
         while not self._stop_event.is_set():
             if not self.can_bus:
                 print("Error in CAN listen thread: CAN bus is not initialized")
-                time.sleep(0.5)
+                time.sleep(5)
                 continue
 
             try:
+                self.button_handler.timeout_button()
+                
                 # low timeout to minimize processing delay
                 data = self.can_bus.recv(.01)
 

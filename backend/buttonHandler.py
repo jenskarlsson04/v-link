@@ -20,9 +20,11 @@ class JoystickState(Enum):
     MOVING = auto()
 
 class ButtonHandler:
-    def __init__(self, click_timeout, long_press_duration):
+    def __init__(self, click_timeout, long_press_duration, mouse_speed):
         self.click_timeout = click_timeout
         self.long_press_duration = long_press_duration
+        self.mouse_speed = mouse_speed
+        self.mouse_mode = False
 
         self.button_state = ButtonState.IDLE
         self.joystick_state = JoystickState.IDLE
@@ -31,9 +33,6 @@ class ButtonHandler:
         self.last_button_at = None
         self.long_press_executed = False
         self.last_joystick_at = 0
-
-        self.mouse_speed = 300
-        self.mouse_mode = False
 
         self.input_device = uinput.Device([
             uinput.REL_X,        # Relative X axis (horizontal movement)
@@ -57,7 +56,7 @@ class ButtonHandler:
     def _handle_buttons(self, button_name):
         if not button_name:
             if self.button_state != ButtonState.IDLE:
-                self._timeout_button()  # Check if the current button needs to be released
+                self.timeout_button()  # Check if the current button needs to be released
             return
 
         now = current_time_ms()
@@ -134,7 +133,7 @@ class ButtonHandler:
         self.button_state = ButtonState.IDLE
         self.current_button = None
 
-    def _timeout_button(self):
+    def timeout_button(self):
         """Automatically release a button if it exceeds the click timeout."""
         if self.current_button and time_elapsed(self.last_button_at) > self.click_timeout:
             self._release_button(self.current_button, time_elapsed(self.button_down_at))

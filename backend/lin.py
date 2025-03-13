@@ -59,10 +59,12 @@ class LINThread(threading.Thread):
 
         self.click_timeout = lin_settings.get("click_timeout", 300)
         self.long_press_duration = lin_settings.get("long_press_duration", 2000)
+        self.mouse_speed = lin_settings.get("mouse_speed", 8)
 
         self.button_handler = ButtonHandler(
             self.click_timeout,
-            self.long_press_duration
+            self.long_press_duration,
+            self.mouse_speed
         )
 
     def _parse_command_mappings(self, commands):
@@ -108,7 +110,7 @@ class LINThread(threading.Thread):
                 if self.lin_serial and self.lin_serial.is_open:
                     if self.lin_serial.in_waiting > 0:
                         self._process_incoming_byte(self.lin_serial.read(1))
-                        # self._timeout_button() # not needed anymore? TODO: test in car
+                        self.button_handler.timeout_button()
                     else:
                         time.sleep(0.1)
                 else:

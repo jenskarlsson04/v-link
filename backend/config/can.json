@@ -250,6 +250,7 @@
             "BTN_RIGHT": ["0x02", "0x3F"]
         },
         "long_press_duration": 1500,
-        "click_timeout": 300
+        "click_timeout": 300,
+        "mouse_speed": 6
     }
 }
