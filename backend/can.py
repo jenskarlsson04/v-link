@@ -173,7 +173,7 @@ class CANSendThread(threading.Thread):
                             sensor["last_requested_time"] = current_time
 
                             next_send_time = min(next_send_time, current_time + sensor["refresh_rate"])
-                            time.sleep(2) # temp debugging
+                            time.sleep(.01) # Required, otherwise car does not respond to request
                     except:
                         print(f"Error processing sensor '{sensor['id']}': {e}")
 
@@ -189,7 +189,8 @@ class CANSendThread(threading.Thread):
 
         msg = can.Message(arbitration_id=sensor["req_id"][0], data=sensor["message_bytes"], is_extended_id=True)
         try:
-            print(msg)
+            if shared_state.verbose:
+                print("Requesting sensor: ", sensor['id'])
             self.can_bus.send(msg)
         except Exception as e:
             print(f"CAN send error: {e}")
@@ -200,7 +201,7 @@ class CANListenThread(threading.Thread):
         self.can_bus = can_bus
         self.client = client
         self._stop_event = stop_event
-        self.can_settings = can_control_settings
+        self.settings = can_control_settings
 
         self.sensors_by_id = {}
         for sensor in sensors:
@@ -209,16 +210,16 @@ class CANListenThread(threading.Thread):
                 self.sensors_by_id[rep_id] = []  # Initialize with an empty list
             self.sensors_by_id[rep_id].append(sensor)
 
-        self.zero_message = [int(byte, 16) for byte in can_control_settings['zero_message']]
-        self.control_reply_id = int(can_control_settings['rep_id'], 16)
-        self.control_byte_count = can_control_settings['control_byte_count']
+        self.zero_message = [int(byte, 16) for byte in self.settings['zero_message']]
+        self.control_reply_id = int(self.settings['rep_id'], 16)
+        self.control_byte_count = self.settings['control_byte_count']
 
-        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in can_control_settings['button'].items()}
-        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in can_control_settings['joystick'].items()}
+        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in self.settings['button'].items()}
+        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in self.settings['joystick'].items()}
         self.button_handler = ButtonHandler(
-            can_control_settings['click_timeout'],
-            can_control_settings['long_press_duration'],
-            can_control_settings['mouse_speed']
+            self.settings['click_timeout'],
+            self.settings['long_press_duration'],
+            self.settings['mouse_speed']
         )
 
     def parse_can_control_values(self, value):
@@ -237,19 +238,19 @@ class CANListenThread(threading.Thread):
                 continue
 
             try:
-                self.button_handler.timeout_button()
-                
-                # low timeout to minimize processing delay
-                data = self.can_bus.recv(.01)
+                data = self.can_bus.recv(0)
 
                 if data:
-                    if self.can_settings['enabled'] and data.arbitration_id == self.control_reply_id:
-                        self.process_control(data)
+                    if data.arbitration_id in self.sensors_by_id:
+                        self.process_message(data)
 
-                    if data.arbitration_id not in self.sensors_by_id:
-                        return
-
-                    self.process_message(data)
+                    if self.settings['enabled']:
+                        self.button_handler.timeout_button()
+                        
+                        if data.arbitration_id == self.control_reply_id:
+                            self.process_control(data)                    
+                else:
+                    time.sleep(0.001)
             except Exception as e:
                 print("CAN listen error:", e)
                 time.sleep(10) # temp
@@ -258,15 +259,21 @@ class CANListenThread(threading.Thread):
         try:
             message_bytes = list(data.data)
 
-            for sensor in self.sensors_by_id[data.arbitration_id]:
-                expected_bytes = sensor["message_bytes"]
+            if shared_state.verbose:            
+                message_hex = " ".join(f"{byte:02X}" for byte in data.data)
+                print("Parsing message: ", message_hex)
 
+            for sensor in self.sensors_by_id[data.arbitration_id]:
                 if (
-                    message_bytes[3] == expected_bytes[3] and  # match parameter0
-                    message_bytes[4] == expected_bytes[4] # match parameter1
+                    message_bytes[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
+                    message_bytes[3] == sensor["message_bytes"][3] and  # match parameter0
+                    message_bytes[4] == sensor["message_bytes"][4]      # match parameter1
                 ):
                     value = ((message_bytes[5] << 8) | message_bytes[6] if sensor["is_16bit"] else message_bytes[5])
                     converted_value = eval(sensor["scale"], {"value": value})
+                    
+                    if shared_state.verbose:
+                        print(f"sending message for {sensor['id']} to frontend with value {converted_value}")
                     
                     self.emit_data_to_frontend(f"{sensor['id']}:{float(converted_value)}")
                     sys.stdout.flush()

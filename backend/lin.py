@@ -164,8 +164,6 @@ class LINThread(threading.Thread):
         swm_id = bytes.fromhex(self.config.lin_settings["swm_id"][2:])
                 
         if self.lin_frame.get_byte(0) != swm_id[0]:
-            if shared_state.verbose:
-                print(f"Frame rejected - First byte = {self.lin_frame.get_byte(0)}, Expected = {swm_id[0]}")
             return
 
         zero_code = bytes.fromhex(self.config.lin_settings["zero_code"][2:])
