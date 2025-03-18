@@ -10,7 +10,6 @@ from .shared.shared_state import shared_state
 class Config:
     def __init__(self):
         self.can_settings = settings.load_settings("can")
-        # self.timeout = self.canSettings["timeout"]
         self.interfaces = []
         self.sensors = {}
         self.load_interfaces()
@@ -22,6 +21,7 @@ class Config:
                 self.interfaces.append({
                     "channel": iface["channel"],
                     "bustype": iface["bustype"],
+                    "is_extended": iface["is_extended"],
                     "bitrate": iface["bitrate"],
                 })
 
@@ -79,64 +79,113 @@ class CANThread(threading.Thread):
         self.daemon = True
         self.client = socketio.Client()
         self.config = Config()
-        self.can_buses = {}
-        self.send_threads = []
-        self.listen_threads = []
-
         self.can_control_settings = self.config.can_settings["controls"]
+
+        self.can_buses = {}         # can interfaces
+        self.notifiers = {}         # can filters (using a callback)
+        self.broadcast_tasks = []   # scheduled tasks to send can messages
 
     def run(self):
         self.connect_to_socketio()
         self.initialize_canbus()
-            
-        # start child threads
-        for iface, can_bus in self.can_buses.items():
-            sensors = self.config.sensors.get(iface, [])
 
-            if not sensors:
-                print(f"Warning: No sensors configured for active CAN interface {iface}")
-
-            # do not send requests for internal sensors
-            filtered_sensors = [sensor for sensor in sensors if sensor.get("type") != "internal"]
-            send_thread = CANSendThread(can_bus, filtered_sensors, self.client, self._stop_event)
-
-            listen_thread = CANListenThread(can_bus, sensors, self.client, self._stop_event, self.can_control_settings)
-
-            self.send_threads.append(send_thread)
-            self.listen_threads.append(listen_thread)
-
-            send_thread.start()
-            listen_thread.start()
-
-        for thread in self.send_threads + self.listen_threads:
-            thread.join()
+        if shared_state.verbose:
+            print("Finished initializing CAN interfaces.")
+        
+        try:
+            while not self._stop_event.is_set():
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
 
     def initialize_canbus(self):
         for iface in self.config.interfaces:
+            channel = iface["channel"] # can0, can1, etc
+            is_extended = iface["is_extended"]
+
             try:
                 bus = can.interface.Bus(
-                    channel=iface["channel"],
+                    channel=channel,
                     bustype=iface["bustype"],
                     bitrate=iface["bitrate"]
                 )
                 if bus is None:
-                    print(f"Error failed to initialize CAN bus {iface['channel']}, bus is None")
+                    print(f"Error: failed to initialize CAN bus {channel}, bus is None")
                     continue
 
-                self.can_buses[iface["channel"]] = bus
-                print(f"Initialized CAN interface: {iface['channel']}")
+                self.can_buses[channel] = bus
+
+                if shared_state.verbose:
+                    print(f"Initialized CAN interface: {channel}")
+
+                # Configure filters: include sensor reply IDs and control reply ID (if controls enabled on this interface)
+                sensors = self.config.sensors.get(channel, [])
+                rep_ids = set()
+                for sensor in sensors:
+                    rep_ids.add(sensor["rep_id"][0])
+
+                if self.can_control_settings['enabled'] and self.can_control_settings["interface"] == channel:
+                    control_rep_id = int(self.can_control_settings['rep_id'], 16)
+                    rep_ids.add(control_rep_id)
+
+                # Set up filters for all reply_ids
+                filters = [{"can_id": rep_id, "can_mask": 0x1FFFFFFF if is_extended else 0x7FF, "extended": is_extended} for rep_id in rep_ids]
+                bus.set_filters(filters)
+
+                # Configure scheduled tasks to send diagnostic CAN requests
+                filtered_sensors = [sensor for sensor in sensors if sensor.get("type") == "diagnostic"]
+                for sensor in filtered_sensors:
+                    msg = can.Message(
+                        arbitration_id=sensor["req_id"][0],
+                        data=sensor["message_bytes"],
+                        is_extended_id=is_extended
+                    )
+                    period = sensor.get("refresh_rate", 1) # get refresh_rate from json, otherwise default to 1 second
+
+                    task = bus.send_periodic(msg, period=period)
+                    self.broadcast_tasks.append(task)
+                    
+                    #if shared_state.verbose:
+                    #    print(f"Created scheduled task for sensor {sensor['id']}")
+
+                sensors_by_id = {}
+                for sensor in sensors:
+                    rep_id = sensor["rep_id"][0]
+                    sensors_by_id.setdefault(rep_id, []).append(sensor)
+
+                #if shared_state.verbose:
+                #    print("Starting CAN Notifier")
+
+                listener = CANListener(sensors_by_id, self.can_control_settings, self.client)
+                notifier = can.Notifier(bus, [listener])
+                self.notifiers[channel] = notifier
+
             except Exception as e:
-                print(f"Error initializing CAN Bus {iface['channel']}: {e}")
+                print(f"Error initializing CAN Bus {channel}: {e}")
 
     def stop_thread(self):
-        print("Stopping CAN thread.")
         time.sleep(.5)
         self._stop_event.set()
-        for thread in self.send_threads + self.listen_threads:
-            thread.join()
+        
+        print("Stopping CAN scheduled tasks.")
+        for task in self.broadcast_tasks:
+            try:
+                task.stop()
+            except Exception as e:
+                print("Error stopping Broadcast Task: ", e)
+
+        print("Stopping CAN Notifiers.")
+        for notifier in self.notifiers.values():
+            try:
+                notifier.stop()
+            except Exception as e:
+                print("Error stopping Notifier: ", e)
+
         for channel, bus in self.can_buses.items():
             bus.shutdown()
-            print("CAN Bus shutting down!")
+
+        if self.client.connected:
+            self.client.disconnect()
 
     def connect_to_socketio(self):
         max_retries = 10
@@ -151,75 +200,29 @@ class CANThread(threading.Thread):
         if shared_state.verbose:
             print("CAN connected to Socket.IO" if self.client.connected else "CAN failed to connect to Socket.IO.")
 
-class CANSendThread(threading.Thread):
-    def __init__(self, can_bus, sensors, client, stop_event):
-        super(CANSendThread, self).__init__()
-        self.can_bus = can_bus
-        self.sensors = sensors
+class CANListener(can.Listener):
+    def __init__(self, sensors_by_id, control_settings, client):
+        self.sensors_by_id = sensors_by_id
+        self.control_settings = control_settings
         self.client = client
-        self._stop_event = stop_event
-        self.event_trigger = threading.Event()
 
-    def run(self):
-        try:
-            while not self._stop_event.is_set():
-                current_time = time.time()
-                next_send_time = current_time + 1
+        # Control parameters
+        self.zero_message = [int(byte, 16) for byte in control_settings['zero_message']]
+        self.control_reply_id = int(control_settings['rep_id'], 16)
+        self.control_byte_count = control_settings['control_byte_count']
+        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in control_settings['button'].items()}
+        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in control_settings['joystick'].items()}
 
-                for sensor in self.sensors:
-                    try:
-                        if current_time - sensor["last_requested_time"] >= sensor["refresh_rate"]:
-                            self.request(sensor)
-                            sensor["last_requested_time"] = current_time
+        # Build lookup from control message tuple to button name
+        self.control_lookup = {}
+        for button_name, value_lists in {**self.control_buttons, **self.control_joystick}.items():
+            for key_tuple in value_lists:
+                self.control_lookup[key_tuple] = button_name
 
-                            next_send_time = min(next_send_time, current_time + sensor["refresh_rate"])
-                            time.sleep(.01) # Required, otherwise car does not respond to request
-                    except:
-                        print(f"Error processing sensor '{sensor['id']}': {e}")
-
-                sleep_time = max(0, next_send_time - time.time())
-                time.sleep(sleep_time) # sleep until a sensor needs to be updated
-        except Exception as e:
-            print("CAN send thread error:", e)
-
-    def request(self, sensor):
-        if not self.can_bus:
-            print("Error: CAN bus is not initialized")
-            return
-
-        msg = can.Message(arbitration_id=sensor["req_id"][0], data=sensor["message_bytes"], is_extended_id=True)
-        try:
-            if shared_state.verbose:
-                print("Requesting sensor: ", sensor['id'])
-            self.can_bus.send(msg)
-        except Exception as e:
-            print(f"CAN send error: {e}")
-
-class CANListenThread(threading.Thread):
-    def __init__(self, can_bus, sensors, client, stop_event, can_control_settings):
-        super(CANListenThread, self).__init__()
-        self.can_bus = can_bus
-        self.client = client
-        self._stop_event = stop_event
-        self.settings = can_control_settings
-
-        self.sensors_by_id = {}
-        for sensor in sensors:
-            rep_id = sensor["rep_id"][0] 
-            if rep_id not in self.sensors_by_id:
-                self.sensors_by_id[rep_id] = []  # Initialize with an empty list
-            self.sensors_by_id[rep_id].append(sensor)
-
-        self.zero_message = [int(byte, 16) for byte in self.settings['zero_message']]
-        self.control_reply_id = int(self.settings['rep_id'], 16)
-        self.control_byte_count = self.settings['control_byte_count']
-
-        self.control_buttons = {k: self.parse_can_control_values(v) for k, v in self.settings['button'].items()}
-        self.control_joystick = {k: self.parse_can_control_values(v) for k, v in self.settings['joystick'].items()}
         self.button_handler = ButtonHandler(
-            self.settings['click_timeout'],
-            self.settings['long_press_duration'],
-            self.settings['mouse_speed']
+            control_settings['click_timeout'],
+            control_settings['long_press_duration'],
+            control_settings['mouse_speed']
         )
 
     def parse_can_control_values(self, value):
@@ -230,82 +233,44 @@ class CANListenThread(threading.Thread):
             # Single CAN message (flat list), wrap in a list
             return [tuple(int(byte, 16) for byte in value)]   
 
-    def run(self):
-        while not self._stop_event.is_set():
-            if not self.can_bus:
-                print("Error in CAN listen thread: CAN bus is not initialized")
-                time.sleep(5)
-                continue
-
-            try:
-                data = self.can_bus.recv(0)
-
-                if data:
-                    if data.arbitration_id in self.sensors_by_id:
-                        self.process_message(data)
-
-                    if self.settings['enabled']:
-                        self.button_handler.timeout_button()
-                        
-                        if data.arbitration_id == self.control_reply_id:
-                            self.process_control(data)                    
-                else:
-                    time.sleep(0.001)
-            except Exception as e:
-                print("CAN listen error:", e)
-                time.sleep(10) # temp
-
-    def process_message(self, data):
+    def on_message_received(self, msg):
         try:
-            message_bytes = list(data.data)
+            if msg.arbitration_id in self.sensors_by_id:
+                data = list(msg.data)
+                if shared_state.verbose:
+                    message_hex = " ".join(f"{byte:02X}" for byte in msg.data)
+                    print("Parsing message: ", message_hex)
 
-            if shared_state.verbose:            
-                message_hex = " ".join(f"{byte:02X}" for byte in data.data)
-                print("Parsing message: ", message_hex)
+                for sensor in self.sensors_by_id[msg.arbitration_id]:
+                    if (data[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
+                        data[3] == sensor["message_bytes"][3] and  # match parameter0
+                        data[4] == sensor["message_bytes"][4]):    # match parameter1
 
-            for sensor in self.sensors_by_id[data.arbitration_id]:
-                if (
-                    message_bytes[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
-                    message_bytes[3] == sensor["message_bytes"][3] and  # match parameter0
-                    message_bytes[4] == sensor["message_bytes"][4]      # match parameter1
-                ):
-                    value = ((message_bytes[5] << 8) | message_bytes[6] if sensor["is_16bit"] else message_bytes[5])
-                    converted_value = eval(sensor["scale"], {"value": value})
-                    
+                        value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
+                        converted_value = eval(sensor["scale"], {"value": value})
+
+                        if shared_state.verbose:
+                            print(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
+
+                        if self.client and self.client.connected:
+                            self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
+                        return  # Process only one sensor per message
+
+            # Process control messages if enabled
+            if self.control_settings['enabled'] and msg.arbitration_id == self.control_reply_id:
+                message_data = list(msg.data)
+                if message_data[-len(self.zero_message):] == self.zero_message:
                     if shared_state.verbose:
-                        print(f"sending message for {sensor['id']} to frontend with value {converted_value}")
-                    
-                    self.emit_data_to_frontend(f"{sensor['id']}:{float(converted_value)}")
-                    sys.stdout.flush()
+                        print("Zero message detected. Ignoring CAN Frame.")
                     return
+
+                key = tuple(message_data[-self.control_byte_count:])
+                if key in self.control_lookup:
+                    print(f"Pressing: {self.control_lookup[key]}")
+                    self.button_handler.handle(self.control_lookup[key])
+                    return
+
+                message_hex = " ".join(f"{byte:02X}" for byte in message_data)
+                print(f"Unknown control signal received: {message_hex}")
         except Exception as e:
-            print("CAN message parse error:", e)
-
-    def emit_data_to_frontend(self, data):
-        if self.client and self.client.connected:
-            self.client.emit("data", data, namespace="/can")
-
-    def process_control(self, data):
-        message_data = list(data.data)
-
-        if message_data[-len(self.zero_message):] == self.zero_message:
-            if shared_state.verbose:
-                print("Zero message detected. Ignoring CAN Frame.")
-            return
-
-        if not hasattr(self, "control_lookup"):
-            self.control_lookup = {}
-
-            for button_name, value_lists in {**self.control_buttons, **self.control_joystick}.items():
-                for key_tuple in value_lists:
-                    self.control_lookup[key_tuple] = button_name
-
-        key = tuple(message_data[-self.control_byte_count:]) 
-        if key in self.control_lookup:
-            print(f"Pressing: {self.control_lookup[key]}")
-            self.button_handler.handle(self.control_lookup[key])
-            return
-        
-        message_hex = " ".join(f"{byte:02X}" for byte in message_data)
-        print(f"Unknown control signal received: {message_hex}")
- 
+            print("CAN listener error:", e)

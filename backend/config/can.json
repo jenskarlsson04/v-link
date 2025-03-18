@@ -6,12 +6,14 @@
             "enabled": true,
             "bustype": "socketcan",
             "channel": "can0",
+            "is_extended": true,
             "bitrate": 125000
         },
         {
             "enabled": false,
             "bustype": "socketcan",
             "channel": "can1",
+            "is_extended": true,
             "bitrate": 125000
         }
     ],
