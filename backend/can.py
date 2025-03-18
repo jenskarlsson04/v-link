@@ -140,10 +140,10 @@ class CANThread(threading.Thread):
                         data=sensor["message_bytes"],
                         is_extended_id=is_extended
                     )
-                    period = sensor.get("refresh_rate", 1) # get refresh_rate from json, otherwise default to 1 second
+                    period = sensor.get("refresh_rate", 1) # default to 1 second if not supplied
 
                     task = bus.send_periodic(msg, period=period)
-                    self.broadcast_tasks.append(task)
+                    self.broadcast_tasks.append(task) # save task to list to prevent it being gc'ed
                     
                     #if shared_state.verbose:
                     #    print(f"Created scheduled task for sensor {sensor['id']}")
@@ -166,14 +166,6 @@ class CANThread(threading.Thread):
     def stop_thread(self):
         time.sleep(.5)
         self._stop_event.set()
-        
-        print("Stopping CAN scheduled tasks.")
-        for task in self.broadcast_tasks:
-            try:
-                task.stop()
-            except Exception as e:
-                print("Error stopping Broadcast Task: ", e)
-
         print("Stopping CAN Notifiers.")
         for notifier in self.notifiers.values():
             try:
@@ -182,6 +174,7 @@ class CANThread(threading.Thread):
                 print("Error stopping Notifier: ", e)
 
         for channel, bus in self.can_buses.items():
+            bus.stop_all_periodic_tasks()
             bus.shutdown()
 
         if self.client.connected:
