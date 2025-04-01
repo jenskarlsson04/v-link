@@ -1,17 +1,22 @@
 {
     "type": "data",
     "name": "can",
-
-    "timing": {
-        "refresh_rate": 0.02,
-        "interval": 50,
-        "timeout": 0.5
-    },
-    "canbus": {
-        "interface": "socketcan",
-        "channel": "can1",
-        "bitrate": 500000
-    },
+    "interfaces": [
+        {
+            "enabled": true,
+            "bustype": "socketcan",
+            "channel": "can0",
+            "is_extended": true,
+            "bitrate": 125000
+        },
+        {
+            "enabled": false,
+            "bustype": "socketcan",
+            "channel": "can1",
+            "is_extended": true,
+            "bitrate": 125000
+        }
+    ],
     "commands": [
         "0xA1",
         "0xA3",
@@ -46,6 +51,9 @@
     ],
     "sensors": {
         "boost": {
+            "interface": "can0",
+            "enabled": true,
+            "type": "diagnostic",
             "parameter": [
                 "0x12",
                 "0x9D"
@@ -56,7 +64,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "high",
+            "refresh_rate": 0.02,
             "scale": "((value - 101.0) * 0.01)",
             "label": "Boost",
             "unit": "Bar",
@@ -65,6 +73,9 @@
             "limit_start": 1.5
         },
         "intake": {
+            "interface": "can0",
+            "enabled": true,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0xCE"
@@ -75,7 +86,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "low",
+            "refresh_rate": 5,
             "scale": "((value * 0.75) - 47.0)",
             "label": "Intake",
             "unit": "°C",
@@ -84,6 +95,9 @@
             "limit_start": 60
         },
         "coolant": {
+            "interface": "can0",
+            "enabled": true,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0xD8"
@@ -94,7 +108,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "low",
+            "refresh_rate": 5,
             "scale": "((value * 0.75) - 47.0)",
             "label": "Coolant",
             "unit": "°C",
@@ -103,6 +117,9 @@
             "limit_start": 100
         },
         "voltage": {
+            "interface": "can0",
+            "enabled": true,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0x0A"
@@ -113,7 +130,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "low",
+            "refresh_rate": 5,
             "scale": "((value * 1) / 10.611399)",
             "label": "Voltage",
             "unit": "V",
@@ -122,6 +139,9 @@
             "limit_start": 16
         },
         "lambda1": {
+            "interface": "can0",
+            "enabled": false,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0x34"
@@ -132,7 +152,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": true,
-            "refresh_rate": "high",
+            "refresh_rate": 0.5,
             "scale": "((value * 16.0) / 65536.0)",
             "label": "Lambda 1",
             "unit": "λ",
@@ -141,6 +161,9 @@
             "limit_start": 2
         },
         "lambda2": {
+            "interface": "can0",
+            "enabled": false,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0x2C"
@@ -151,7 +174,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "low",
+            "refresh_rate": 5,
             "scale": "(value * (1.33 / 255.0))",
             "label": "Lambda 2",
             "unit": "V",
@@ -160,6 +183,9 @@
             "limit_start": 2
         },
         "rpm": {
+            "interface": "can0",
+            "enabled": true,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0x1D"
@@ -170,7 +196,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": false,
-            "refresh_rate": "high",
+            "refresh_rate": 0.02,
             "scale": "(value * 40)",
             "label": "RPM",
             "unit": "rpm",
@@ -179,6 +205,9 @@
             "limit_start":7000
         },
         "speed": {
+            "interface": "can0",
+            "enabled": false,
+            "type": "diagnostic",
             "parameter": [
                 "0x10",
                 "0xA5"
@@ -189,7 +218,7 @@
             "action": "0xA6",
             "target": "0x7A",
             "is_16bit": true,
-            "refresh_rate": "high",
+            "refresh_rate": 0.02,
             "scale": "(value * 512) / 65536.0",
             "label": "Speed",
             "unit": "km/h",
@@ -197,5 +226,33 @@
             "max_value": 260,
             "limit_start": 240
         }
+    },
+    "controls": {
+        "enabled": false,
+        "interface": "can0",
+        "rep_id": "0x0131726C",
+        "zero_message": ["0x00", "0x00", "0x3F"],
+        "control_byte_count": 2,
+        "button": {
+            "BTN_BACK": [
+                ["0x10", "0x3F"],
+                ["0x80", "0x3F"],
+                ["0x81", "0x3F"]
+            ],
+            "BTN_ENTER": ["0x20", "0x3F"],
+            "BTN_YES": ["0x00", "0x2F"],
+            "BTN_NO": ["0x00", "0x1F"],
+            "BTN_NEXT": ["0x00", "0x3D"],
+            "BTN_PREV": ["0x00", "0x3E"]
+        },
+        "joystick": {
+            "BTN_UP": ["0x08", "0x3F"],
+            "BTN_DOWN": ["0x04", "0x3F"],
+            "BTN_LEFT": ["0x01", "0x3F"],
+            "BTN_RIGHT": ["0x02", "0x3F"]
+        },
+        "long_press_duration": 1500,
+        "click_timeout": 300,
+        "mouse_speed": 6
     }
 }
