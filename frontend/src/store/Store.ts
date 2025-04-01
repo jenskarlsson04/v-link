@@ -103,7 +103,7 @@ const DATA = create((set) => ({
 const APP = create(
   immer((set) => ({
     system: {
-      version: 'v2.2.1',
+      version: 'v3.0.0',
       view: '',
       switch: 'ArrowUp',
       lastKey: '',

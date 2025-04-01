@@ -308,7 +308,7 @@ def setup_arguments():
 def display_thread_states():
     clear_screen()
     # Display the app name and version
-    print("V-Link 2.2.1 | Boosted Moose")
+    print("V-Link 3.0.0 | Boosted Moose")
     print('Device: ', vlink.rpiModel, ' | ', vlink.rpiProtocol)
     print(f"RTI Screen: {'Up' if shared_state.rtiStatus else 'Down'}")
     print("")
