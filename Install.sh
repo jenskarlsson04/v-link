@@ -109,7 +109,7 @@ fi
 
 # Fetch the latest release info from GitHub (no external package needed)
 echo "Fetching the latest release URL from GitHub..."
-LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/LRYMND/v-link/releases/latest | grep "browser_download_url" | grep "V-Link.zip" | cut -d '"' -f 4)
+LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/BoostedMoose/v-link/releases/latest | grep "browser_download_url" | grep "V-Link.zip" | cut -d '"' -f 4)
 
 if [ -z "$LATEST_RELEASE_URL" ]; then
     echo "Error: Could not find the latest V-Link.zip release."
@@ -127,7 +127,7 @@ if confirm_action "install Boosted Moose V-Link now"; then
     sudo apt-get install -y ffmpeg libudev-dev libusb-dev build-essential python3-venv
 
     # Step 4.4: Download the file
-    download_url="https://github.com/LRYMND/v-link/releases/download/v3.0.0/V-Link.zip"
+    download_url=$LATEST_RELEASE_URL
     output_path="/home/$CURRENT_USER/v-link"
     echo "Downloading files to: $output_path"
     sudo mkdir -p "$output_path"
@@ -173,11 +173,11 @@ if confirm_action "install the custom DTOverlays? (Required for V-Link HAT)"; th
 
     # Download the overlays to the determined directory
     sudo wget -O "$OVERLAY_DIR/v-link.dtbo" \
-        https://github.com/LRYMND/v-link/raw/master/resources/dtoverlays/v-link.dtbo
+        https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/v-link.dtbo
     sudo wget -O "$OVERLAY_DIR/mcp2515-can1.dtbo" \
-        https://github.com/LRYMND/v-link/raw/master/resources/dtoverlays/mcp2515-can1.dtbo
+        https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/mcp2515-can1.dtbo
     sudo wget -O "$OVERLAY_DIR/mcp2515-can2.dtbo" \
-        https://github.com/LRYMND/v-link/raw/master/resources/dtoverlays/mcp2515-can2.dtbo
+        https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/mcp2515-can2.dtbo
 fi
 
 # Step 6: Append lines to /boot/config.txt or /boot/firmware/config.txt
