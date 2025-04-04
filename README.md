@@ -73,7 +73,9 @@ The use of this soft- and hardware is at your own risk. The author and distribut
 
 ## Want to support us?
 
-We are working on this project in our free time and support is always highly appreciated :)
+In the Wiki you can find a guide to set everything up yourself, however, we developed the HAT and Software to avoid a lot of the hastle. Buy buying the hardware from www.boostedmoose.de you are supporting us directly and the work which was done in our free time. You can also leave us a tip through the buttons below.
+
+Your support is highly appreciated :)
 
 | [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://www.buymeacoffee.com/lrymnd)  | [![Buy Me A Coffee](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://www.buymeacoffee.com/tigo) |
 |---|---|
