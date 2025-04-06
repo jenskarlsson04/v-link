@@ -59,6 +59,13 @@ function Cardata() {
   }, []);
 
 
+  useEffect(() => {
+    if(app.settings.screen.autoOpen.value) {
+      console.log('Opening RTI')
+      sysChannel.emit("systemTask", "rti")
+    }
+  }, [])
+
 
   const extendedTimer = useRef<NodeJS.Timeout | null>(null);
   const shutdownTimer = useRef<NodeJS.Timeout | null>(null);
@@ -66,19 +73,20 @@ function Cardata() {
   useEffect(() => {
     const startShutdownTimer = () => {
       shutdownTimer.current = setTimeout(() => {
+        console.log("Shutting Down")
         sysChannel.emit("systemTask", "shutdown");
-      }, 10000);
+      }, (app.settings.shutdown.shutdownDelay.value * 1000));
     };
 
-    if (!app.system.ignition) {
-      // Start initial 10-second shutdown timer
+    if (!app.system.ignition && app.settings.shutdown.autoShutdown.value) {
+      // Start shutdown timer
       startShutdownTimer();
 
       app.update((state) => {
         state.system.modal.visible = true;
         state.system.modal.title = "Ignition Off.";
         state.system.modal.body =
-          "System will shut down in 10 seconds to prevent battery drain. \n Click to dismiss for 5 minutes.";
+          `System will shut down in ${app.settings.shutdown.shutdownDelay.value} seconds to prevent battery drain. \n Click to dismiss for ${app.settings.shutdown.messageTimeout.value} minutes.`;
         state.system.modal.button = "DISMISS";
         state.system.modal.action = () => {
           if (shutdownTimer.current) clearTimeout(shutdownTimer.current); // Cancel shutdown timer
@@ -89,7 +97,7 @@ function Cardata() {
               state.system.modal.visible = true;
             });
             startShutdownTimer(); // Restart 10-second timer when modal appears again
-          }, 5 * 60 * 1000); // 5 minutes
+          }, (app.settings.shutdown.messageTimeout.value * 60 * 1000)); // Based on Settings
 
           // Hide modal after clicking dismiss
           app.update((state) => {
@@ -111,7 +119,7 @@ function Cardata() {
       if (shutdownTimer.current) clearTimeout(shutdownTimer.current);
       if (extendedTimer.current) clearTimeout(extendedTimer.current);
     };
-  }, [app.system.ignition]);
+  }, [app.system.ignition, app.settings.shutdown.autoShutdown.value]);
 
 
   return null

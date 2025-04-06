@@ -219,7 +219,6 @@ const Content = () => {
   const checkMouseY = (mouseY) => {
     const deadZone = 85; // Percentage
     if (mouseY > window.innerHeight * (deadZone / 100)) {
-      console.log('true')
       return true;
     } else
       return false;

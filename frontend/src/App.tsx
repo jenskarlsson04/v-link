@@ -106,17 +106,16 @@ function App() {
     <StyleSheetManager shouldForwardProp={isPropValid}>
       <AppContainer ref={containerRef}>
         <Socket />
-        <Cardata />
         <Splash />
 
 
-        {system.startedUp ? (
+        {system.startedUp && ready ? (
           <ThemeProvider theme={theme}>
-            {ready && <Carplay
+            <Carplay
               commandCounter={commandCounter}
               command={keyCommand}
-            />}
-            {<Modal
+            />
+            <Modal
               isOpen={system.modal.visible}
               title={system.modal.title}
               body={system.modal.body}
@@ -128,8 +127,9 @@ function App() {
                   //state.system.modal.content = null
                 })
               }
-            />}
-            {<Content />}
+            />
+            <Cardata />
+            <Content />
           </ThemeProvider>
         ) : (
           <></>

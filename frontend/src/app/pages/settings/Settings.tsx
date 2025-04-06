@@ -453,6 +453,8 @@ const Settings = () => {
         {system.settingPage === 1 &&
           <>
             {renderSetting("general", currentSettings)}
+            {renderSetting("screen", currentSettings)}
+            {renderSetting("shutdown", currentSettings)}
             {renderSetting("side_bars", currentSettings)}
 
             <Element>
