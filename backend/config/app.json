@@ -95,7 +95,7 @@
     "title": "Sidebar Settings",
     "type": "system",
 
-    "dashBar": {
+    "topBar": {
       "value": true,
       "label": "Carplay in Fullscreen"
     },
@@ -239,11 +239,6 @@
       "type": null,
       "value": 50,
       "label": "Resolution (ms)"
-    },
-    "interpolation": {
-      "type": null,
-      "value": true,
-      "label": "Interpolation"
     },
     "value_1": {
       "type": "adc",

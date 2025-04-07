@@ -208,7 +208,7 @@ const Content = () => {
   }, [app.system.view, app.system.interface.navBar]);
 
   const handleClick = (event) => {
-    console.log('click')
+    //console.log('click')
     if (app.system.view != 'Settings' && checkMouseY(event.clientY)) {
       app.update((state) => {
         state.system.interface.navBar = true;

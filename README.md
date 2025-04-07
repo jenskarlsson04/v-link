@@ -33,7 +33,7 @@ When using the Installer everything is being set up automatically. More informat
 
 ```
 #Download and Install
-wget "https://github.com/BoostedMoose/v-link/releases/download/v3.0.0/Install.sh"
+wget "https://github.com/BoostedMoose/v-link/releases/download/v3.0.1/Install.sh"
 sudo chmod +x Install.sh
 sudo ./Install.sh
 

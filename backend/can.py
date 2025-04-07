@@ -166,7 +166,7 @@ class CANThread(threading.Thread):
     def stop_thread(self):
         time.sleep(.5)
         self._stop_event.set()
-        print("Stopping CAN Notifiers.")
+        print("Stopping CAN thread.")
         for notifier in self.notifiers.values():
             try:
                 notifier.stop()

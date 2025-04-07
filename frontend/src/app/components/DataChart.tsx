@@ -3,7 +3,6 @@ import styled, { useTheme } from 'styled-components';
 
 import { DATA, APP } from '../../store/Store';
 import convert from 'color-convert';
-import { saveAs } from 'file-saver';
 
 const Container = styled.div`
     position: relative;
@@ -46,7 +45,6 @@ const History = styled.div`
 const DataChart = ({
     length = 2500,
     resolution = 100,
-    interpolation = true,
     setCount,
     tickCountX,
     tickCountY,
@@ -55,12 +53,13 @@ const DataChart = ({
 }) => {
     const theme = useTheme();
     const steps = parseInt(length / resolution);
+    const app = APP((state) => state);
     const modules = APP((state) => state.modules);
+    const system = APP((state) => state.system);
     const settings = APP((state) => state.settings);
     const data = DATA((state) => state.data);
 
-    const app = APP((state) => state.settings)
-    const themeColor = (app.general.colorTheme.value).toLowerCase()
+    const themeColor = (settings.general.colorTheme.value).toLowerCase()
 
 
     const containerRef = useRef(null);  // Create a reference for the container
@@ -111,8 +110,6 @@ const DataChart = ({
     
     // Initialize dataStreams and recordedData with empty arrays for each dataset
     const [dataStreams, setDataStreams] = useState(datasets.map(() => Array(steps).fill(0)));
-    const [recordedData, setRecordedData] = useState(datasets.map(() => [])); // Empty arrays for each dataset
-    const [isRecording, setIsRecording] = useState(false); // State to toggle recording
 
     const generateColors = () => {
         const baseColor = theme.colors.theme[themeColor].active.replace(/#/g, '');
@@ -261,50 +258,6 @@ const DataChart = ({
         return <>{paths}</>;
     };
 
-    const renderDots = () => {
-        const dots = datasets.map((dataset, i) => {
-            const yScale = height / (dataset.yMax - dataset.yMin);
-
-            return dataStreams[i].map((value, j) => {
-                if (value !== null) {
-                    const x = (j * resolution / length) * width;
-                    const y = height - (value - dataset.yMin) * yScale;
-
-                    return (
-                        <circle
-                            key={`dot-${i}-${j}`}
-                            cx={x}
-                            cy={y}
-                            r="3"
-                            fill={colors[i]}
-                        />
-                    );
-                }
-                return null;
-            });
-        });
-
-        return dots;
-    };
-
-    const handleExport = () => {
-        const date = new Date();
-        const timestamp = date.toISOString().replace(/[-:T.]/g, '_'); // Format timestamp for the filename
-
-        const exportObj = datasets.map((dataset, i) => {
-            return {
-                label: dataset.label,
-                data: recordedData[i].map((value) => ({
-                    timestamp: value.timestamp, // Use the stored timestamp for each data point
-                    value: value.value
-                }))
-            };
-        });
-
-        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-        saveAs(blob, `v-link_record_${timestamp}.json`);
-    };
-
     useEffect(() => {
         const timer = setInterval(() => {
             const newDataStreams = datasets.map((dataset, index) => {
@@ -316,36 +269,22 @@ const DataChart = ({
             });
 
             setDataStreams(newDataStreams);
-
-            // Only update recorded data if we're recording
-            if (isRecording) {
-                const updatedRecordedData = datasets.map((dataset, index) => {
-                    const newData = [{
-                        value: dataStreams[index][0],
-                        timestamp: new Date().toISOString() // Capture timestamp when data arrives
-                    }, ...recordedData[index].slice(0, steps - 1)];
-
-                    return newData;
-                });
-                setRecordedData(updatedRecordedData);
-            }
         }, resolution);
 
         return () => clearInterval(timer);
-    }, [dataStreams, isRecording]);
+    }, [dataStreams]);
 
     const handleToggleRecording = () => {
-        if (isRecording) {
-            handleExport(); // Export data when the user stops the recording
-        }
-        setIsRecording(!isRecording); // Toggle the recording state
+        app.update((state) => {
+            state.system.recording = !state.system.recording;
+        });
     };
 
     return (
         <Container ref={containerRef} theme={theme}>
             <svg width={width} height={height}>
                 {renderGrid()}
-                {interpolation ? renderCurve() : renderDots()}
+                { renderCurve()}
             </svg>
 
             <History>
@@ -371,7 +310,7 @@ const DataChart = ({
                     viewBox="0 0 50 50"
                     xmlns="http://www.w3.org/2000/svg"
                     style={{
-                        fill: isRecording ? 'red' : color_xGrid, // Change color based on recording state
+                        fill: system.recording ? 'red' : color_xGrid, // Change color based on recording state
                         borderRadius: '50%',
                         stroke: "#141414",  // Black outline for the button
                         strokeWidth: 4,   // Set outline thickness
@@ -380,7 +319,7 @@ const DataChart = ({
                     {/* Outer circle (the button's background) */}
                     <circle cx="25" cy="25" r="16" />
                     {/* Inner circle (the gap in the middle) */}
-                    <circle cx="25" cy="25" r="8" fill={isRecording ? 'red' : color_xGrid} />
+                    <circle cx="25" cy="25" r="8" fill={system.recording ? 'red' : color_xGrid} />
                 </svg>
             </RecordButton>
         </Container>

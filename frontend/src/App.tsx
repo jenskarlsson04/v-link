@@ -83,14 +83,16 @@ function App() {
           const carplayFullscreen = containerRef.current.offsetHeight;
           const carplayWindowed = containerRef.current.offsetHeight - app.settings.side_bars.topBarHeight.value;
 
-          console.log(carplayFullscreen, carplayWindowed, app.settings.side_bars.dashBar.value);
+          console.log("Fullscreen Height: ", carplayFullscreen);
+          console.log("Windowed Height: ", carplayWindowed);
+          console.log("Topbar Height: ", app.settings.side_bars.topBarHeight.value);
 
           app.update((state) => {
             state.system.windowSize.width = containerRef.current.offsetWidth;
             state.system.windowSize.height = containerRef.current.offsetHeight;
 
             state.system.carplaySize.width = containerRef.current.offsetWidth;
-            state.system.carplaySize.height = (app.settings.side_bars.dashBar.value ? carplayFullscreen : carplayWindowed);
+            state.system.carplaySize.height = (app.settings.side_bars.topBarHeight.value ? carplayFullscreen : carplayWindowed);
           });
 
           setReady(true);
@@ -124,7 +126,6 @@ function App() {
               onClose={() =>
                 app.update((state) => {
                   state.system.modal.visible = false;
-                  //state.system.modal.content = null
                 })
               }
             />

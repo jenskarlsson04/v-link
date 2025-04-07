@@ -41,7 +41,6 @@ const Charts = () => {
                 <DataChart
                     length={app.settings.dash_charts.length.value}
                     resolution={app.settings.dash_charts.resolution.value}
-                    interpolation={app.settings.dash_charts.interpolation.value}
                     setCount={setCount}
                     tickCountX={5}  // Update with the desired number of X-axis ticks
                     tickCountY={4}  // Update with the desired number of Y-axis ticks
