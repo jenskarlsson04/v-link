@@ -366,7 +366,7 @@ if __name__ == '__main__':
                     print("Updating app.")
                     # This will open a new terminal window and run the update script.
                     subprocess.Popen([
-                        "lxterminal", "--working-directory=/home/pi/v-link", "-e", f"bash {script_path}"
+                        "lxterminal", "--working-directory=~/v-link", "-e", f"bash {script_path}"
                     ])
                 except Exception as e:
                     print(f"Could not update: {e}")
