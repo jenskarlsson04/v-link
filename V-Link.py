@@ -255,24 +255,8 @@ class VLINK:
             print("Update event received")
             shared_state.update_event.clear()
 
-            # Get the current directory and script path
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            script_path = os.path.join(current_dir, "Update.sh")
-
-            # Use `xterm` to ensure visibility
-            #terminal_command = f"xterm -hold -e bash {script_path}"  # `-hold` keeps the terminal open after the script finishes
-
-            try:
-                # Start the terminal in a detached process
-                print(script_path)
-                command = f"lxterminal -e 'bash {script_path}'"
-                os.system(command)
-                shared_state.exit_event.set()
-                
-            except Exception as e:
-                print(f"Error opening terminal: {e}")
-                return
-
+            shared_state.update = True
+            shared_state.exit_event.set()
 
 
 def clear_screen():
@@ -370,4 +354,21 @@ if __name__ == '__main__':
     finally:
             vlink.join_threads()
             print('Done.')
+
+            if shared_state.update:
+                time.sleep(.5)
+
+                # Close the current app and launch the update process in a new terminal window
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                script_path = os.path.join(current_dir, "Update.sh")
+
+                try:
+                    print("Updating app.")
+                    # This will open a new terminal window and run the update script.
+                    subprocess.Popen([
+                        "lxterminal", "--working-directory=/home/pi/v-link", "-e", f"bash {script_path}"
+                    ])
+                except Exception as e:
+                    print(f"Could not update: {e}")
+
             sys.exit(0)
