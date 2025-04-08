@@ -65,12 +65,12 @@ const Modal = ({ isOpen, onClose, title, body, button, action }) => {
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
-      setTimeout(() => setVisible(true), 10); // Ensure transition triggers
+      setTimeout(() => setVisible(true), 100); // Ensure transition triggers
     } else {
       setVisible(false);
       setTimeout(() => setShouldRender(false), 300); // Delay unmounting until fade-out finishes
     }
-  }, [isOpen]);
+  }, [isOpen, shouldRender]);
 
   if (!shouldRender) return null; // Prevent render when modal is fully closed
 

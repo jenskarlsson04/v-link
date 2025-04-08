@@ -124,6 +124,7 @@ export const Input = styled.input`
     display: inline-block;
     border: 0;
     border-radius: 10px;
+    opacity: 1;
     color: ${({ theme }) => theme.colors.text};;
     background-color: ${({ theme }) => theme.colors.button};
 

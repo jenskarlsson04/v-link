@@ -208,7 +208,7 @@ const Content = () => {
   }, [app.system.view, app.system.interface.navBar]);
 
   const handleClick = (event) => {
-    console.log('click')
+    //console.log('click')
     if (app.system.view != 'Settings' && checkMouseY(event.clientY)) {
       app.update((state) => {
         state.system.interface.navBar = true;
@@ -219,7 +219,6 @@ const Content = () => {
   const checkMouseY = (mouseY) => {
     const deadZone = 85; // Percentage
     if (mouseY > window.innerHeight * (deadZone / 100)) {
-      console.log('true')
       return true;
     } else
       return false;

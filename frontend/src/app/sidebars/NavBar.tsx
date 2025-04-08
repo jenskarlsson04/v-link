@@ -81,7 +81,7 @@ const NavBar = ({ isHovering }) => {
         {['Dashboard', 'Carplay', 'Settings'].map((view) => (
           <div className="column" key={view} style={{ position: 'relative', width: '100%'}}>
             <NavButton onClick={() => {
-              console.log('click, ', view)
+              //console.log('click, ', view)
               app.update((state) => { state.system.view = view })
             }}>
               <IconNav

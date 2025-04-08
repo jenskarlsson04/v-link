@@ -117,7 +117,7 @@ const TopBar = () => {
 
   return (
     <Topbar isActive={
-      app.settings.side_bars.dashBar.value
+      app.settings.side_bars.topBar.value
   &&  app.system.view === 'Carplay'
   && !app.system.interface.content
   && !app.system.interface.navBar}

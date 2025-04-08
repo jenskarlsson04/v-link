@@ -63,11 +63,39 @@
     }
   },
 
+  "shutdown": {
+    "title": "Auto Shutdown",
+    "type": "system",
+
+    "autoShutdown": {
+      "value": false,
+      "label": "Auto Shutdown"
+    },
+    "shutdownDelay": {
+      "value": 10,
+      "label": "Shutdown Delay (sec)"
+    },
+    "messageTimeout": {
+      "value": 5,
+      "label": "Popup Timeout (min)"
+    }
+  },
+
+  "screen": {
+    "title": "Screen Settings",
+    "type": "system",
+
+    "autoOpen": {
+      "value": false,
+      "label": "Open Screen on Start"
+    }
+  },
+
   "side_bars": {
     "title": "Sidebar Settings",
     "type": "system",
 
-    "dashBar": {
+    "topBar": {
       "value": true,
       "label": "Carplay in Fullscreen"
     },
@@ -211,11 +239,6 @@
       "type": null,
       "value": 50,
       "label": "Resolution (ms)"
-    },
-    "interpolation": {
-      "type": null,
-      "value": true,
-      "label": "Interpolation"
     },
     "value_1": {
       "type": "adc",

@@ -66,7 +66,7 @@ export const Socket = () => {
     };
 
     const handleIgnition = () => (ign_state) => {
-      console.log('ignstate: ', ign_state)
+      console.log('Ignition: ', ign_state)
       store['app'].update((state) => {
         state.system.ignition = ign_state
       });

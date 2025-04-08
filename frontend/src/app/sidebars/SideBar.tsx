@@ -182,7 +182,7 @@ const SideBar = ({ collapseLength }) => {
                             </IconMedium>
 
                         </Link>
-                        <Caption1 style={{ color: theme.colors.light }}> v3.0.0</Caption1>
+                        <Caption1 style={{ color: theme.colors.light }}> {app.system.version}</Caption1>
                     </div>
                 </div>
 
