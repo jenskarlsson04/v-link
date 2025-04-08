@@ -20,6 +20,8 @@ class SharedState:
         self.rtiStatus = False
         self.hdmiStatus = False
 
+        self.update = False
+
         #Thread States:
         self.toggle_app = threading.Event()
 

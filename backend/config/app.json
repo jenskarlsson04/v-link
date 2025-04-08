@@ -68,7 +68,7 @@
     "type": "system",
 
     "autoShutdown": {
-      "value": false,
+      "value": true,
       "label": "Auto Shutdown"
     },
     "shutdownDelay": {
@@ -86,7 +86,7 @@
     "type": "system",
 
     "autoOpen": {
-      "value": false,
+      "value": true,
       "label": "Open Screen on Start"
     }
   },
