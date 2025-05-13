@@ -73,7 +73,8 @@ The use of this soft- and hardware is at your own risk. The author and distribut
 
 ## Want to support us?
 
-In the Wiki you can find a guide to set everything up yourself, however, we developed the HAT and Software to avoid a lot of the hastle. Buy buying the hardware from www.boostedmoose.de you are supporting us directly and the work which was done in our free time. You can also leave us a tip through the buttons below.
+In the Wiki you can find a guide to set everything up.
+If you want to help, you can leave a tip through the buttons below.
 
 Your support is highly appreciated :)
 
