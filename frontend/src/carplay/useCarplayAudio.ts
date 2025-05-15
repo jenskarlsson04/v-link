@@ -11,7 +11,7 @@ import { createAudioPlayerKey } from './worker/utils'
 
 //TODO: allow to configure
 const defaultAudioVolume = 1
-const defaultNavVolume = 0.5
+const defaultNavVolume = 1
 
 const useCarplayAudio = (
   worker: CarPlayWorker,
