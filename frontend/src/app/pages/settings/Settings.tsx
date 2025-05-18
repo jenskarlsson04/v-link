@@ -19,6 +19,7 @@ const canChannel = io("ws://localhost:4001/can")
 const linChannel = io("ws://localhost:4001/lin")
 const adcChannel = io("ws://localhost:4001/adc")
 const rtiChannel = io("ws://localhost:4001/rti")
+const mostChannel = io("ws://localhost:4001/most")
 
 const Container = styled.div`
     flex: 1;
@@ -216,6 +217,9 @@ const Settings = () => {
     setReset(true)
   }
 
+  function sendForceSwitchMostMessage () {
+    mostChannel.emit("force_switch");
+  }
 
   const checkUpdate = async () => {
     const githubRepo = "BoostedMoose/v-link"; // Replace with your GitHub repository
@@ -548,9 +552,9 @@ const Settings = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', gap: '10px' }}>
-                <Button onClick={() => { systemTask('reset') }} style={{ height: '100%' }}> Reset </Button>
-                <Button onClick={() => { systemTask('reboot') }} style={{ height: '100%' }}> Reboot </Button>
                 <Button onClick={() => { checkUpdate() }} style={{ height: '100%' }}> Update </Button>
+                <Button onClick={() => { systemTask('reboot') }} style={{ height: '100%' }}> Reboot </Button>
+                <Button onClick={() => { sendForceSwitchMostMessage() }} style={{ height: '100%' }}> Switch PiMost </Button>
               </div>
             </div>
             <p />

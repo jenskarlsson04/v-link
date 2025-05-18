@@ -55,6 +55,7 @@ from backend.rti                 import RTIThread
 from backend.can                 import CANThread
 from backend.lin                 import LINThread
 from backend.ign                 import IGNThread
+from backend.pimost              import PiMOSTThread
 
 from backend.shared.shared_state import shared_state
 
@@ -78,6 +79,9 @@ class VLINK:
           
             'vcan':     VCANThread,
         }
+
+        if shared_state.pimost:
+            self.threads['pimost'] = PiMOSTThread
 
     def detect_rpi(self):
 
@@ -126,7 +130,10 @@ class VLINK:
         self.start_thread('adc')
         time.sleep(.5)
         self.start_thread('app')
-        
+            
+        if shared_state.pimost:
+            time.sleep(1)
+            self.start_thread('pimost')
 
     def start_thread(self, thread_name):
         if thread_name in shared_state.THREADS:

@@ -20,7 +20,7 @@ CORS(server, resources={r"/*": {"origins": "*"}})
 socketio = SocketIO(server, cors_allowed_origins="*", async_mode='eventlet')
 
 # Define modules
-modules = ["app", "mmi", "can", "lin", "adc", "rti"]
+modules = ["app", "mmi", "can", "lin", "adc", "rti", "most"]
 
 class ServerThread(threading.Thread):
     def __init__(self):
@@ -202,3 +202,23 @@ class ServerThread(threading.Thread):
             socketio.emit('ign', shared_state.ign_state.is_set(), namespace="/sys")
         else:
             if (shared_state.verbose): print('Unknown action:', args)
+
+    @socketio.on('force_switch', namespace='/most')
+    def handle_force_switch():
+        if shared_state.verbose:
+            print("Frontend requested PiMost force switch")
+
+        most_thread = shared_state.THREADS.get("pimost", None)
+
+        if most_thread and most_thread.is_alive():
+            try:
+                most_thread.force_switch()
+            except Exception as e:
+                print("Error calling PiMost force_switch from server.py:", e)
+
+    ## not really used yet, we can perform certain actions based on MOST messages here or in pimost.py
+    @socketio.on('most_message', namespace='/most')
+    def print_most_message(args):
+        print("received most message on most namespace")
+        print(args)
+
