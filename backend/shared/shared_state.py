@@ -13,7 +13,7 @@ class SharedState:
 
         self.vCan = False
         self.vLin = False
-        self.pimost = True
+        self.pimost = False
 
         self.vite = True
         self.isKiosk = True

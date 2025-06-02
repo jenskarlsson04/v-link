@@ -71,21 +71,24 @@ class PiMost:
                     self.port = None
 
     def parse_message(self, data, length):
-        raw_data = struct.unpack_from('>BBBBBHB', data, 0)
-        message = data[8:len(data)]
-        most_message = {
-            'type': raw_data[0],
-            'source_address_high': raw_data[1],
-            'source_address_low': raw_data[2],
-            'fBlock_id': raw_data[3],
-            'instance_id': raw_data[4],
-            'fkt_id': raw_data[5] >> 4,
-            'op_type': raw_data[5] & 0xf,
-            'tel_id': (raw_data[6] & 0xf) >> 4,
-            'tel_len': raw_data[6] & 0xf,
-            'data': message
-        }
-        self.recv_most_message(most_message)
+        try: 
+            raw_data = struct.unpack_from('>BBBBBHB', data, 0)
+            message = data[8:len(data)]
+            most_message = {
+                'type': raw_data[0],
+                'source_address_high': raw_data[1],
+                'source_address_low': raw_data[2],
+                'fBlock_id': raw_data[3],
+                'instance_id': raw_data[4],
+                'fkt_id': raw_data[5] >> 4,
+                'op_type': raw_data[5] & 0xf,
+                'tel_id': (raw_data[6] & 0xf) >> 4,
+                'tel_len': raw_data[6] & 0xf,
+                'data': message
+            }
+            self.recv_most_message(most_message)
+        except Exception as e:
+            print("Error parsing MOST message: ", e)
 
 class PiMOSTThread(threading.Thread):
     def __init__(self):
@@ -116,7 +119,7 @@ class PiMOSTThread(threading.Thread):
     def connect_to_socketio(self):
         max_retries = 10
         current_retry = 0
-        while not self.client.connected and current_retry < max_retries:
+        while not self._stop_event.is_set() and not self.client.connected and current_retry < max_retries:
             try:
                 self.client.connect('http://localhost:4001', namespaces=['/most'])
             except Exception as e:
