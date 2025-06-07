@@ -45,8 +45,14 @@ function Cardata() {
   useEffect(() => {
     canWorker.onmessage = (event) => {
       const { type, message } = event.data;
-      const newData = { [type]: message };
-      updateData(newData.message)
+      if (type === 'door_state') {
+        updateApp((state) => {
+          state.system.driverDoorOpen = message;
+        });
+      } else {
+        const newData = { [type]: message };
+        updateData(newData.message);
+      }
     };
 
     adcWorker.onmessage = (event) => {

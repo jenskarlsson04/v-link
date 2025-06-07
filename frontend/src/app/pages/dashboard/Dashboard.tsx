@@ -6,6 +6,7 @@ import { Fade } from '../../../theme/styles/Effects';
 import Classic from './classic/Classic';
 import Race from './race/Race';
 import Charts from './charts/Charts';
+import Model from './model/Model';
 import Pagination from '../../components/Pagination';
 
 const DashBoard = styled.div`
@@ -51,6 +52,7 @@ function Dashboard() {
     { name: "Classic", component: Classic },
     { name: "Race", component: Race },
     { name: "Charts", component: Charts },
+    { name: "Model", component: Model },
   ];
 
   const defaultComponentIndex = components.findIndex(

@@ -198,6 +198,7 @@ class CANListener(can.Listener):
         self.sensors_by_id = sensors_by_id
         self.control_settings = control_settings
         self.client = client
+        self.last_door_state = None
 
         # Control parameters
         self.zero_message = [int(byte, 16) for byte in control_settings['zero_message']]
@@ -246,7 +247,13 @@ class CANListener(can.Listener):
                             print(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
 
                         if self.client and self.client.connected:
-                            self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
+                            if sensor['id'] == 'door':
+                                state = bool(converted_value)
+                                if state != self.last_door_state:
+                                    self.last_door_state = state
+                                    self.client.emit('door_state', state, namespace='/can')
+                            else:
+                                self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
                         return  # Process only one sensor per message
 
             # Process control messages if enabled

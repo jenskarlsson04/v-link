@@ -114,6 +114,7 @@ const APP = create(
       startedUp: false,
 
       ignition: true,
+      driverDoorOpen: false,
       recording: false,
 
       windowSize: {

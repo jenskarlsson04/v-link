@@ -48,6 +48,11 @@ canChannel.on("data", (data) => {
     postCarDataToMain(data);
 });
 
+// Listen for driver door state changes
+canChannel.on("door_state", (state) => {
+    postMessage({ type: 'door_state', message: state });
+});
+
 // Send a request for canbus settings
 canChannel.emit("load");
 
