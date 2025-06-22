@@ -13,6 +13,7 @@ class SharedState:
 
         self.vCan = False
         self.vLin = False
+        self.pimost = False
 
         self.vite = True
         self.isKiosk = True
@@ -52,6 +53,7 @@ class SharedState:
             "rti":      None,
             "ign":      None,
             "vcan":     None,
+            "pimost":   None,
         }
 
 shared_state = SharedState()
