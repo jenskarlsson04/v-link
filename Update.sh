@@ -22,7 +22,6 @@ echo "Updating V-Link"
 
 # Step 1: Remove the existing V-Link configuration and files
 echo "Removing old files..."
-rm -rf ~/.config/v-link
 rm -rf ~/v-link/frontend/
 rm -rf ~/v-link/backend
 rm -f ~/v-link/V-Link.zip

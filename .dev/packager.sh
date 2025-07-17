@@ -28,6 +28,7 @@ cp requirements.txt dist/requirements.txt
 cp Install.sh dist/Install.sh
 cp Uninstall.sh dist/Uninstall.sh
 cp Update.sh dist/Update.sh
+cp Patch.sh dist/Patch.sh
 echo "Done."
 
 echo "Creating Zip..."
