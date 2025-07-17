@@ -65,17 +65,20 @@ class ADCThread(threading.Thread):
 
 
     def read_sensor(self):    
-        for i, (key, value) in enumerate(self.sensor_data["sensors"].items()):
+        for i, (key, sensor) in enumerate(self.sensor_data["sensors"].items()):
             voltage = self.channels[i].voltage
             resistance = None
 
-            if value["ntc"]:
+            if sensor["ntc"]:
                 resistance = PULL_UP * voltage / (5 - voltage)
 
-            characteristics = value["characteristic"]
+            characteristics = sensor["characteristic"]
             interpolated_value = self.interpolate_value(voltage, resistance, characteristics)
+            
+            
+            converted_value = eval(sensor["scale"], {"value": interpolated_value})
 
-            data = (f"{value['app_id']}:{interpolated_value}")
+            data = (f"{sensor['app_id']}:{float(converted_value)}")
             self.emit_data_to_frontend(data)
 
     def interpolate_value(self, voltage, resistance, characteristics):
