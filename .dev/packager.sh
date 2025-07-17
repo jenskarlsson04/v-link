@@ -33,11 +33,11 @@ echo "Done."
 
 echo "Creating Zip..."
 cd dist/
-zip -r V-Link.zip V-Link.py requirements.txt frontend/ backend/
+zip -r V-Link.zip V-Link.py Patch.sh requirements.txt frontend/ backend/
 echo "Done."
 
 echo "Cleaning up..."
-rm -rf V-Link.py requirements.txt frontend/ backend/
+rm -rf V-Link.py Patch.sh requirements.txt frontend/ backend/
 
 cd ..
 
