@@ -100,7 +100,7 @@ class CANThread(threading.Thread):
 
     def initialize_canbus(self):
         for iface in self.config.interfaces:
-            channel = iface["channel"] # can0, can1, etc
+            channel = iface["channel"] # can1, can2, etc
             is_extended = iface["is_extended"]
 
             try:

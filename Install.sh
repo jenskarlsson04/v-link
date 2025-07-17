@@ -209,7 +209,6 @@ dtoverlay=mcp2515-can1,oscillator=16000000,interrupt=24
 dtoverlay=mcp2515-can2,oscillator=16000000,interrupt=22
 
 #Configure IGN logic
-dtoverlay=pi3-disable-bt
 dtoverlay=gpio-poweroff,gpiopin=0
 
 #No Splash on boot
@@ -236,7 +235,6 @@ dtoverlay=mcp2515-can1,oscillator=16000000,interrupt=24
 dtoverlay=mcp2515-can2,oscillator=16000000,interrupt=22
 
 #Configure IGN logic
-dtoverlay=pi3-disable-bt
 dtoverlay=gpio-poweroff,gpiopin=0
 
 #No Splash on boot
@@ -272,33 +270,63 @@ EOF'
     fi
 fi
 
-# Step 7: Create V-Link systemd service
-if confirm_action "create systemd services for V-Link"; then
-    sudo bash -c "cat > /etc/systemd/system/v-link.service <<EOF
-[Unit]
-Description=V-Link Services
-After=network.target
+# Step 7: Configure systemd-networkd for CAN interfaces
+if confirm_action "configure systemd-networkd for V-Link CAN interfaces"; then
+    echo "Creating systemd-networkd configuration files for can1 and can2..."
 
-[Service]
-Type=oneshot
-ExecStartPre=/bin/bash -c '/usr/sbin/ip link set can0 down || true; /usr/sbin/ip link set can1 down || true'
-ExecStart=/bin/bash -c '/usr/sbin/modprobe uinput; /usr/sbin/ip link set can0 up type can bitrate 500000; /usr/sbin/ip link set can1 up type can bitrate 125000'
-ExecStop=/bin/bash -c '/usr/sbin/ip link set can0 down; /usr/sbin/ip link set can1 down'
-RemainAfterExit=true
+    # Create can1.netdev
+    sudo tee /etc/systemd/network/can1.network > /dev/null <<EOF
+[Match]
+Name=can1
 
-[Install]
-WantedBy=multi-user.target
-EOF"
-        sudo systemctl enable v-link.service && systemctl daemon-reload
+[CAN]
+BitRate=125000
+
+[Network]
+# raw CAN
+EOF
+
+    # Create can2.netdev
+    sudo tee /etc/systemd/network/can2.network > /dev/null <<EOF
+[Match]
+Name=can2
+
+[CAN]
+BitRate=500000
+
+[Network]
+# raw CAN
+EOF
+
+    # Enable and restart systemd-networkd
+    sudo systemctl enable systemd-networkd
+    
+    echo "Systemd-networkd now manages can1 and can2 automatically at boot."
 fi
 
-# Step 8: Create V-Link udev rules
+# Step 8: Load uinput kernel module at boot
+if confirm_action "enable uinput kernel module at boot"; then
+    echo "Creating /etc/modules-load.d/uinput.conf..."
+    echo "uinput" | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
+
+    if [[ $? -eq 0 ]]; then
+        echo -e "uinput module will now be auto-loaded at boot.\n"
+    else
+        echo -e "Failed to create uinput.conf.\n"
+    fi
+fi
+
+# Step 9: Create V-Link udev rules
 if confirm_action "create udev rules for V-Link"; then
     echo "Creating combined udev rule"
     RULE_FILE=/etc/udev/rules.d/42-v-link.rules
 
     # Write all rules into a single file
     echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="1314", ATTR{idProduct}=="152*", MODE="0660", GROUP="plugdev"' | sudo tee $RULE_FILE
+
+    echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.1", NAME="can1"' | sudo tee $RULE_FILE
+    echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.2", NAME="can2"' | sudo tee $RULE_FILE
+    
     echo 'KERNEL=="ttyS0", MODE="0660", GROUP="plugdev"' | sudo tee -a $RULE_FILE
     echo 'KERNEL=="uinput", MODE="0660", GROUP="plugdev"' | sudo tee -a $RULE_FILE
 
@@ -309,46 +337,16 @@ if confirm_action "create udev rules for V-Link"; then
     fi
 fi
 
-# Step 9: Create autostart file for V-Link
+# Step 10: Create autostart file for V-Link
 if confirm_action "create autostart file for V-Link"; then
     output_path="/home/$CURRENT_USER/v-link"
 
     sudo bash -c "cat > /etc/xdg/autostart/v-link.desktop <<EOL
 [Desktop Entry]
 Name=V-Link
-Exec=sh -c 'sudo systemctl restart v-link.service && python $output_path/V-Link.py'
+Exec=sh -c 'python $output_path/V-Link.py'
 Type=Application
 EOL"
-fi
-
-# Step 10: Enable sudo permission for systemctl restart
-if confirm_action "enable V-Link to restart v-link.service as sudo"; then
-    SERVICE_NAME="v-link"
-    SUDOERS_FILE="/etc/sudoers.d/$SERVICE_NAME"
-    CURRENT_USER=$(whoami)
-
-    # Check if the sudoers file already exists
-    if [[ -f "$SUDOERS_FILE" ]]; then
-        echo "Sudoers file for $SERVICE_NAME already exists at $SUDOERS_FILE. Skipping creation."
-    else
-        echo "Creating sudoers rule for user '$CURRENT_USER' to restart '$SERVICE_NAME'..."
-
-        # Write the rule to a new sudoers file
-        {
-            echo "# Allow $CURRENT_USER to restart $SERVICE_NAME without a password"
-            echo "$CURRENT_USER ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart $SERVICE_NAME.service"
-        } > "$SUDOERS_FILE"
-
-        # Validate the sudoers file syntax
-        if visudo -c -f "$SUDOERS_FILE" &>/dev/null; then
-            echo "Sudoers rule added successfully in $SUDOERS_FILE."
-            sudo chmod 0440 /etc/sudoers.d/$SERVICE_NAME
-        else
-            echo "Error: Sudoers rule syntax is invalid. Aborting."
-            rm -f "$SUDOERS_FILE"
-            exit 1
-        fi
-    fi
 fi
 
 # Step 11: Remove logo and cursor on boot
