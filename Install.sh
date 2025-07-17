@@ -299,11 +299,8 @@ BitRate=500000
 EOF
 
     # Enable and restart systemd-networkd
-    echo "Enabling and restarting systemd-networkd..."
     sudo systemctl enable systemd-networkd
-    sudo systemctl daemon-reexec
-    sudo systemctl restart systemd-networkd
-
+    
     echo "Systemd-networkd now manages can1 and can2 automatically at boot."
 fi
 
