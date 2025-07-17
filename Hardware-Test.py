@@ -125,10 +125,14 @@ class CANBusHandler:
     def setup_interfaces(self) -> None:
         """Set up CAN interfaces with appropriate bitrate."""
         try:
-            # Setting up can0 interface
-            subprocess.run(["sudo", "ip", "link", "set", "can0", "type", "can", "bitrate", "125000"], 
+            # Cleaning up can interfaces
+            subprocess.run(["sudo", "ip", "link", "set", "can2", "down"], check=True)
+            subprocess.run(["sudo", "ip", "link", "set", "can1", "down"], check=True)
+            
+            # Setting up can2 interface
+            subprocess.run(["sudo", "ip", "link", "set", "can2", "type", "can", "bitrate", "125000"], 
                           check=True)
-            subprocess.run(["sudo", "ip", "link", "set", "up", "can0"], check=True)
+            subprocess.run(["sudo", "ip", "link", "set", "up", "can2"], check=True)
             
             # Setting up can1 interface
             subprocess.run(["sudo", "ip", "link", "set", "can1", "type", "can", "bitrate", "125000"], 
@@ -144,22 +148,22 @@ class CANBusHandler:
         while self.status_manager.running:
             try:
                 # Initialize both CAN buses
-                can0 = can.interface.Bus(channel='can0', bustype='socketcan', bitrate=125000)
+                can2 = can.interface.Bus(channel='can2', bustype='socketcan', bitrate=125000)
                 can1 = can.interface.Bus(channel='can1', bustype='socketcan', bitrate=125000)
                 
-                # Test can0 -> can1 communication
+                # Test can2 -> can1 communication
                 msg0 = can.Message(arbitration_id=0x123, data=[1, 2, 3, 4, 5])
-                can0.send(msg0)
+                can2.send(msg0)
                 rcv1 = can1.recv(timeout=1)
                 if rcv1 and list(rcv1.data) == list(msg0.data):
                     self.status_manager.update("CAN", 0, "Connected and working")
                 else:
                     self.status_manager.update("CAN", 0, "No data received")
                 
-                # Test can1 -> can0 communication
+                # Test can1 -> can2 communication
                 msg1 = can.Message(arbitration_id=0x456, data=[6, 7, 8, 9, 10])
                 can1.send(msg1)
-                rcv0 = can0.recv(timeout=1)
+                rcv0 = can2.recv(timeout=1)
                 if rcv0 and list(rcv0.data) == list(msg1.data):
                     self.status_manager.update("CAN", 1, "Connected and working")
                 else:
@@ -170,7 +174,7 @@ class CANBusHandler:
                 self.status_manager.update("CAN", 1, f"Error: {str(e)[:30]}")
             finally:
                 try:
-                    can0.shutdown()
+                    can2.shutdown()
                     can1.shutdown()
                 except:
                     pass
