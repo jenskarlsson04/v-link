@@ -47,6 +47,14 @@ curl -L "$LATEST_RELEASE_URL" -o ~/v-link/V-Link.zip
 echo "Unzipping the latest V-Link.zip..."
 unzip -o ~/v-link/V-Link.zip -d ~/v-link/
 
+# Step 4: Run the Patch.sh script from the new release to fix leftovers from previous installations
+if [ -f ~/v-link/Patch.sh ]; then
+    echo "Running Patch.sh to fix previous installations..."
+    bash ~/v-link/Patch.sh
+else
+    echo "No Patches found. Done."
+fi
+
 # Wait for user to press any key before restarting
 wait_for_key_press
 
