@@ -7,11 +7,13 @@ import signal
 from .shared.shared_state import shared_state
 
 class APPThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.url = f"http://localhost:{4001 if shared_state.vite else 5173}"
         self.browser = None
         self._stop_event = threading.Event()
+
+        self.logger = logger
 
     def run(self):
         self.start_browser()

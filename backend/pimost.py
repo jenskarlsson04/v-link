@@ -91,12 +91,14 @@ class PiMost:
             print("Error parsing MOST message: ", e)
 
 class PiMOSTThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super(PiMOSTThread, self).__init__()
         self.pimost = PiMost(self.recv_most_message)
         self.client = socketio.Client()
         self._stop_event = threading.Event()
         self.daemon = True
+
+        self.logger = logger
 
     def run(self):
         try:

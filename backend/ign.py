@@ -5,13 +5,14 @@ import lgpio
 from .shared.shared_state import shared_state
 
 class IGNThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.IGNITION_PIN = 1
         self.chip = lgpio.gpiochip_open(0)  # Open GPIO chip
 
         self._stop_event = threading.Event()
         self.daemon = True
+        self.logger = logger
 
     def run(self):
         # Initialize GPIO pin here after the thread starts
@@ -50,7 +51,7 @@ class IGNThread(threading.Thread):
                 
                 # Check if the state has changed
                 if current_state != previous_state:
-                    if current_state == 0: # Pin is raised high when Ignition is turned off.
+                    if current_state == 1: # Pin is raised high when Ignition is turned off.
                         shared_state.ign_state.clear()  # Ignition is OFF, so clear the state
                     else:
                         shared_state.ign_state.set()  # Ignition is ON, so set the state                    

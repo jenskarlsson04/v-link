@@ -39,7 +39,7 @@ class LinFrame:
 
 
 class LINThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super(LINThread, self).__init__()
         self.config = Config()
         self.lin_frame = LinFrame()
@@ -48,6 +48,8 @@ class LINThread(threading.Thread):
         self._stop_event = threading.Event()
         self.daemon = True
         lin_settings = self.config.lin_settings
+
+        self.logger = logger
 
         # Button and joystick mappings
         self.button_mappings = self._parse_command_mappings(

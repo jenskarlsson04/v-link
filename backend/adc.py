@@ -25,7 +25,7 @@ STEP = 0.5
 
 
 class ADCThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.client = socketio.Client()
         self._stop_event = threading.Event()
@@ -35,6 +35,8 @@ class ADCThread(threading.Thread):
         self.sensor_data = None
         self.pressure_data = None
         self.temperature_data = None
+
+        self.logger = logger
 
     def run(self):
         if (ads):

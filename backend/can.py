@@ -7,6 +7,7 @@ from . import settings
 from .buttonHandler import ButtonHandler
 from .shared.shared_state import shared_state
 
+
 class Config:
     def __init__(self):
         self.can_settings = settings.load_settings("can")
@@ -70,10 +71,11 @@ class Config:
 
                 print(f"Loaded sensor '{key}' on {iface}")
             except Exception as e:
+                logger.error(f"Error loading sensor '{key}': {e}")
                 print(f"Error loading sensor '{key}': {e}")
 
 class CANThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super(CANThread, self).__init__()
         self._stop_event = threading.Event()
         self.daemon = True
@@ -84,6 +86,8 @@ class CANThread(threading.Thread):
         self.can_buses = {}         # can interfaces
         self.notifiers = {}         # can filters (using a callback)
         self.broadcast_tasks = []   # scheduled tasks to send can messages
+
+        self.logger = logger
 
     def run(self):
         self.connect_to_socketio()
@@ -110,6 +114,7 @@ class CANThread(threading.Thread):
                     bitrate=iface["bitrate"]
                 )
                 if bus is None:
+                    self.logger.error(f"Error: failed to initialize CAN bus {channel}, bus is None")
                     print(f"Error: failed to initialize CAN bus {channel}, bus is None")
                     continue
 
@@ -161,6 +166,7 @@ class CANThread(threading.Thread):
                 self.notifiers[channel] = notifier
 
             except Exception as e:
+                self.logger.error(f"Error initializing CAN Bus {channel}: {e}")
                 print(f"Error initializing CAN Bus {channel}: {e}")
 
     def stop_thread(self):
@@ -187,6 +193,7 @@ class CANThread(threading.Thread):
             try:
                 self.client.connect('http://localhost:4001', namespaces=['/can'])
             except Exception as e:
+                self.logger.error(f"Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
                 print(f"Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
                 time.sleep(.5)
                 current_retry += 1

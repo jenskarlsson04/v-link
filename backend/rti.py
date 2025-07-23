@@ -7,11 +7,13 @@ import serial
 from .shared.shared_state import shared_state
 
 class RTIThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.rti_serial = None
         self._stop_event = threading.Event()
         self.daemon = True
+
+        self.logger = logger
 
         try:
             if(shared_state.rpiModel == 5):

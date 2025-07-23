@@ -23,12 +23,14 @@ socketio = SocketIO(server, cors_allowed_origins="*", async_mode='eventlet')
 modules = ["app", "mmi", "can", "lin", "adc", "rti", "most"]
 
 class ServerThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.daemon = True  # Ensure thread stops when main program exits
         self.app = server
         self.stop_event = threading.Event()
         self.server_socket = eventlet.listen(('0.0.0.0', 4001))
+        
+        self.logger = logger
 
     def run(self):
         if shared_state.verbose:

@@ -44,6 +44,7 @@ import argparse
 
 from tabulate import tabulate
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from backend.dev.vcan            import VCANThread
@@ -56,6 +57,8 @@ from backend.can                 import CANThread
 from backend.lin                 import LINThread
 from backend.ign                 import IGNThread
 from backend.pimost              import PiMOSTThread
+
+from backend.logger import logger
 
 from backend.shared.shared_state import shared_state
 
@@ -89,16 +92,17 @@ class VLINK:
             # Get Raspberry Model
             with open('/proc/device-tree/model', 'r') as f:
                 model = f.read().strip()
+                found = False
                 for i in range(3, 6):
-                    if 'Raspberry Pi ' + str(i) in model:
+                    if f'Raspberry Pi {i}' in model:
                         shared_state.rpiModel = i
-                        self.rpiModel = 'Raspberry Pi ' + str(i)
+                        self.rpiModel = f'Raspberry Pi {i}'
+                        found = True
                         break
+                if not found:
+                    self.rpiModel = "Unknown"
+                    shared_state.rpiModel = 4
 
-                    elif i == 5:
-                        'Device not Recognized, using config for Raspberry Pi 4.'
-                        self.rpiModel = "Unknown"
-                        shared_state.rpiModel = 4
             
             # Get Session Type
             session_type = os.getenv('XDG_SESSION_TYPE')
@@ -116,26 +120,26 @@ class VLINK:
     
     def start_modules(self):
         if shared_state.vCan:
-            self.start_thread('vcan')
+            self.start_thread('vcan', logger)
 
         time.sleep(.05)
-        self.start_thread('ign')
+        self.start_thread('ign', logger)
         time.sleep(.05)
-        self.start_thread('can')
+        self.start_thread('can', logger)
         time.sleep(.05)
-        self.start_thread('rti')
+        self.start_thread('rti', logger)
         time.sleep(.05)
-        self.start_thread('lin')
+        self.start_thread('lin', logger)
         time.sleep(.05)
-        self.start_thread('adc')
+        self.start_thread('adc', logger)
         time.sleep(.5)
-        self.start_thread('app')
+        self.start_thread('app', logger)
             
         if shared_state.pimost:
             time.sleep(1)
-            self.start_thread('pimost')
+            self.start_thread('pimost', logger)
 
-    def start_thread(self, thread_name):
+    def start_thread(self, thread_name, logger):
         if thread_name in shared_state.THREADS:
             thread = shared_state.THREADS[thread_name]
             if isinstance(thread, threading.Thread) and thread.is_alive():
@@ -144,7 +148,7 @@ class VLINK:
                 return
 
         thread_class = self.threads[thread_name]
-        thread = thread_class() # instantiate thread
+        thread = thread_class(logger=logger) # instantiate thread
         thread.daemon = True
         thread.start()
 
@@ -152,8 +156,11 @@ class VLINK:
         if(shared_state.verbose):
             print(f'{thread_name} thread started.')
 
+        logger.info(f"{thread_name} thread started.")
+
 
     def stop_thread(self, thread_name):
+        logger.info(f"Stopping {thread_name} thread.")
         if thread_name in shared_state.THREADS:
             thread = shared_state.THREADS[thread_name]
             if isinstance(thread, threading.Thread) and thread.is_alive():
@@ -163,9 +170,11 @@ class VLINK:
                     thread.join()
                 except Exception as e:
                     print(f"Error stopping thread {thread_name} with error: {e}")
+                    logger.error(f"Error stopping thread {thread_name}: {e}")
                 finally:
                     shared_state.THREADS[thread_name] = None
                     if(shared_state.verbose): print(f'{thread_name} thread stopped.')
+                    logger.info(f"{thread_name} thread stopped.")
 
 
     def toggle_thread(self, thread_name):
@@ -216,6 +225,7 @@ class VLINK:
 
     def process_exit_event(self):
         if self.exit_event.is_set():
+            logger.info("Exiting App")
             self.exit_event.clear()
             shared_state.rtiStatus = False
 
@@ -226,6 +236,7 @@ class VLINK:
 
     def process_restart_event(self):
         if shared_state.restart_event.is_set():
+            logger.info("Restarting App")
             shared_state.restart_event.clear()
 
             for thread_name, thread in shared_state.THREADS.items():
@@ -248,9 +259,11 @@ class VLINK:
             )
 
             if  not shared_state.hdmiStatus:
+                logger.info("Toggle HDMI Off")
                 if (shared_state.verbose): print("HDMI Off")
                 os.system(hdmi_off)
             else:
+                logger.info("Toggle HDMI On")
                 if (shared_state.verbose): print("HDMI On")
                 os.system(hdmi_on)
 
@@ -259,6 +272,7 @@ class VLINK:
 
     def process_update_event(self):
         if shared_state.update_event.is_set():
+            logger.info("Updating App")
             print("Update event received")
             shared_state.update_event.clear()
 
@@ -322,13 +336,15 @@ if __name__ == '__main__':
     shared_state.hdmi_event.set()
     clear_screen()
 
-    vlink = VLINK()
+    args = setup_arguments()
+    logger = logger(verbose=args.verbose)
 
-    vlink.start_thread('server')
+
+    vlink = VLINK()
+    vlink.start_thread('server', logger)
     vlink.detect_rpi()
 
-    args = setup_arguments()
-    
+
     # Update shared_state based on arguments
     shared_state.verbose = args.verbose
     shared_state.vCan = args.vcan
@@ -377,5 +393,6 @@ if __name__ == '__main__':
                     ])
                 except Exception as e:
                     print(f"Could not update: {e}")
+                    logger.error(f"Could not update: {e}")
 
             sys.exit(0)
