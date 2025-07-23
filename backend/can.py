@@ -252,6 +252,7 @@ class CANListener(can.Listener):
             # Process control messages if enabled
             if self.control_settings['enabled'] and msg.arbitration_id == self.control_reply_id:
                 message_data = list(msg.data)
+                self.button_handler.timeout_button()
                 if message_data[-len(self.zero_message):] == self.zero_message:
                     if shared_state.verbose:
                         print("Zero message detected. Ignoring CAN Frame.")
