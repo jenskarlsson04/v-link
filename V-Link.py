@@ -323,7 +323,7 @@ if __name__ == '__main__':
     clear_screen()
 
     args = setup_arguments()
-    logger = logger(verbose=args.verbose)
+    logger = logger(verbose=True)
 
 
     vlink = VLINK()

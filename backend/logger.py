@@ -56,7 +56,7 @@ def exec(cmd):
         return f"[ERROR] Command '{cmd}' failed: {e}"
 
 
-def logger(verbose=False):
+def logger(verbose=True):
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
