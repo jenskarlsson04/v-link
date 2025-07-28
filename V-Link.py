@@ -100,6 +100,7 @@ class VLINK:
                         found = True
                         break
                 if not found:
+                    logger.critical(f"No Raspberry Pi detected.")
                     self.rpiModel = "Unknown"
                     shared_state.rpiModel = 4
 
@@ -140,11 +141,11 @@ class VLINK:
             self.start_thread('pimost', logger)
 
     def start_thread(self, thread_name, logger):
+        logger.info(f"Starting {thread_name} thread.")
         if thread_name in shared_state.THREADS:
             thread = shared_state.THREADS[thread_name]
             if isinstance(thread, threading.Thread) and thread.is_alive():
-                if shared_state.verbose:
-                    print(f'{thread_name} thread is already running.')
+                logger.info(f"{thread_name} thread is already running.")
                 return
 
         thread_class = self.threads[thread_name]
@@ -153,8 +154,6 @@ class VLINK:
         thread.start()
 
         shared_state.THREADS[thread_name] = thread
-        if(shared_state.verbose):
-            print(f'{thread_name} thread started.')
 
         logger.info(f"{thread_name} thread started.")
 
@@ -164,27 +163,21 @@ class VLINK:
         if thread_name in shared_state.THREADS:
             thread = shared_state.THREADS[thread_name]
             if isinstance(thread, threading.Thread) and thread.is_alive():
-                if(shared_state.verbose): print(f'Stopping {thread_name} thread.')
                 try:
                     thread.stop_thread()
                     thread.join()
                 except Exception as e:
-                    print(f"Error stopping thread {thread_name} with error: {e}")
                     logger.error(f"Error stopping thread {thread_name}: {e}")
                 finally:
                     shared_state.THREADS[thread_name] = None
-                    if(shared_state.verbose): print(f'{thread_name} thread stopped.')
                     logger.info(f"{thread_name} thread stopped.")
 
 
     def toggle_thread(self, thread_name):
         if shared_state.THREADS[thread_name]:
             self.stop_thread(thread_name)
-            if(shared_state.verbose): print('stop thread')
         else:
             self.start_thread(thread_name)
-            if(shared_state.verbose): print('start thread')
-
 
     def join_threads(self):
         for thread_name, thread in shared_state.THREADS.items():
@@ -194,8 +187,7 @@ class VLINK:
     def print_thread_states(self):
         for thread_name, thread in shared_state.THREADS.items():
             state = 'Alive' if isinstance(thread, threading.Thread) and thread.is_alive() else 'Not alive'
-            print(f'{thread_name} Thread: {state}')
-
+            logger.debug(f'{thread_name} Thread: {state}')
 
     def process_toggle_event(self):
         if shared_state.toggle_can.is_set():
@@ -242,9 +234,6 @@ class VLINK:
             for thread_name, thread in shared_state.THREADS.items():
                 if thread_name != 'server' and isinstance(thread, threading.Thread) and thread.is_alive():
                     self.stop_thread(thread_name)
-                       
-            time.sleep(.5)
-            print('Restarting...')
             time.sleep(1)
             
             self.start_modules()
@@ -260,11 +249,9 @@ class VLINK:
 
             if  not shared_state.hdmiStatus:
                 logger.info("Toggle HDMI Off")
-                if (shared_state.verbose): print("HDMI Off")
                 os.system(hdmi_off)
             else:
                 logger.info("Toggle HDMI On")
-                if (shared_state.verbose): print("HDMI On")
                 os.system(hdmi_on)
 
             shared_state.hdmiStatus = not shared_state.hdmiStatus
@@ -273,7 +260,6 @@ class VLINK:
     def process_update_event(self):
         if shared_state.update_event.is_set():
             logger.info("Updating App")
-            print("Update event received")
             shared_state.update_event.clear()
 
             shared_state.update = True
@@ -373,10 +359,11 @@ if __name__ == '__main__':
 
             time.sleep(.1)
     except KeyboardInterrupt:
-            print('\nCleaning up threads, please wait...')
+            print("\n\nExiting...\n")
+            logger.info('Exiting and cleaning up threads.')
     finally:
             vlink.join_threads()
-            print('Done.')
+            logger.info('Done.')
 
             if shared_state.update:
                 time.sleep(.5)
@@ -386,13 +373,12 @@ if __name__ == '__main__':
                 script_path = os.path.join(current_dir, "Update.sh")
 
                 try:
-                    print("Updating app.")
+                    logger.info("Starting update...")
                     # This will open a new terminal window and run the update script.
                     subprocess.Popen([
                         "lxterminal", "--working-directory=~/v-link", "-e", f"bash {script_path}"
                     ])
                 except Exception as e:
-                    print(f"Could not update: {e}")
-                    logger.error(f"Could not update: {e}")
+                    logger.critical(f"Update failed: {e}")
 
             sys.exit(0)

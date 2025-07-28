@@ -41,6 +41,8 @@ class LinFrame:
 class LINThread(threading.Thread):
     def __init__(self, logger):
         super(LINThread, self).__init__()
+        self.logger = logger
+        
         self.config = Config()
         self.lin_frame = LinFrame()
         self.lin_serial = None
@@ -49,7 +51,7 @@ class LINThread(threading.Thread):
         self.daemon = True
         lin_settings = self.config.lin_settings
 
-        self.logger = logger
+
 
         # Button and joystick mappings
         self.button_mappings = self._parse_command_mappings(
@@ -69,11 +71,13 @@ class LINThread(threading.Thread):
             self.mouse_speed
         )
 
+
     def _parse_command_mappings(self, commands):
         return {
             bytes.fromhex("".join(cmd.replace("0x", "") for cmd in command)): name
             for name, command in commands.items()
         }
+
 
     def run(self):
         try:
@@ -82,22 +86,22 @@ class LINThread(threading.Thread):
                 try:
                     self.lin_serial = serial.Serial(port=port, baudrate=9600, timeout=1)
                 except Exception as e:
-                    print("UART error: ", e)
+                    self.logger.error(f"UART error: {e}")
                 
                 while not self._stop_event.is_set():
                     try:
                         self._read_from_serial()
                     except serial.SerialException as e:
-                        print(f"Serial communication error: {e}")
+                        self.logger.error(f"Serial communication error: {e}")
                     except Exception as e:
-                        print(f"Error in LIN _read_from_serial: {e}")
+                        self.logger.error(f"Error in LIN _read_from_serial: {e}")
             else:
                 self._read_from_file()
         except Exception as e:
-            print(f"Unexpected error in LIN thread: {e}")
+            self.logger.error(f"Unexpected error in LIN thread: {e}")
+
 
     def stop_thread(self):
-        print("Stopping LIN thread.")
         time.sleep(.5)
         self._stop_event.set()
 
@@ -105,6 +109,7 @@ class LINThread(threading.Thread):
             self.lin_serial.close()
 
         self.join(timeout=2)
+
 
     def _read_from_serial(self):
         try:
@@ -118,14 +123,15 @@ class LINThread(threading.Thread):
                 else:
                     break
         except KeyboardInterrupt:
-            print("Live data collection terminated.")
+            self.logger.info("Live data collection terminated.")
         except serial.SerialException as e:
-            print(f"Serial communication error: {e}")
+            self.logger.error(f"Serial communication error: {e}")
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            self.logger.error(f"Unexpected error: {e}")
+
 
     def _read_from_file(self):
-        print("Replaying LIN bus data from file...")
+        self.logger.info("Replaying LIN bus data from file...")
         try:
             time.sleep(10) # wait for app to be started
             with open(Path(__file__).parent / "dev/lin_test.txt", "r") as file:
@@ -137,7 +143,8 @@ class LINThread(threading.Thread):
                         self._process_incoming_byte(byte.to_bytes(1, 'big'))
                     time.sleep(0.1)
         except KeyboardInterrupt:
-            print("Replay terminated.")
+            self.logger.info("Replay stopped by user.")
+
 
     def _process_incoming_byte(self, byte):
         try:
@@ -157,12 +164,11 @@ class LINThread(threading.Thread):
                 if byte:
                     self.lin_frame.append_byte(byte[0] if isinstance(byte, bytes) else byte)
                 elif shared_state.verbose:
-                    print("Empty byte, not adding to lin frame")
+                    self.logger.info("Empty byte, not adding to lin frame")
         except IndexError as e:
-            print(f"IndexError: {e} while processing incoming bytes.")
+            self.logger.error(f"IndexError: {e} while processing incoming bytes.")
 
     def _handle_frame(self):
-        """Process a complete LIN frame."""
         swm_id = bytes.fromhex(self.config.lin_settings["swm_id"][2:])
                 
         if self.lin_frame.get_byte(0) != swm_id[0]:

@@ -1,3 +1,13 @@
+#logger = logger(verbose=True)
+
+#logger.debug("This is a debug message")       # Shown only if verbose=True
+#logger.info("This is an info message")        # Shown only if verbose=True
+#logger.warning("This is a warning message")   # Shown only if verbose=True
+#logger.error("This is an error message")      # Shown only if verbose=True
+#logger.critical("This is a critical message") # Always shown, even if verbose=False
+
+
+
 import logging
 from logging.handlers import RotatingFileHandler
 import os

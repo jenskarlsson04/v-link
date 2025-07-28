@@ -9,10 +9,13 @@ from .shared.shared_state import shared_state
 
 
 class Config:
-    def __init__(self):
+    def __init__(self, logger):
+        self.logger = logger
+
         self.can_settings = settings.load_settings("can")
         self.interfaces = []
         self.sensors = {}
+
         self.load_interfaces()
         self.load_sensors()
 
@@ -69,32 +72,30 @@ class Config:
                     "last_requested_time": 0
                 })
 
-                print(f"Loaded sensor '{key}' on {iface}")
+                self.logger.debug(f"Loaded sensor '{key}' on {iface}")
             except Exception as e:
-                logger.error(f"Error loading sensor '{key}': {e}")
-                print(f"Error loading sensor '{key}': {e}")
+                self.logger.error(f"Error loading sensor '{key}': {e}")
 
 class CANThread(threading.Thread):
     def __init__(self, logger):
         super(CANThread, self).__init__()
+        self.logger = logger
+
         self._stop_event = threading.Event()
         self.daemon = True
+
         self.client = socketio.Client()
-        self.config = Config()
+        self.config = Config(logger)
         self.can_control_settings = self.config.can_settings["controls"]
 
         self.can_buses = {}         # can interfaces
         self.notifiers = {}         # can filters (using a callback)
         self.broadcast_tasks = []   # scheduled tasks to send can messages
 
-        self.logger = logger
-
+        
     def run(self):
         self.connect_to_socketio()
         self.initialize_canbus()
-
-        if shared_state.verbose:
-            print("Finished initializing CAN interfaces.")
         
         try:
             while not self._stop_event.is_set():
@@ -115,13 +116,10 @@ class CANThread(threading.Thread):
                 )
                 if bus is None:
                     self.logger.error(f"Error: failed to initialize CAN bus {channel}, bus is None")
-                    print(f"Error: failed to initialize CAN bus {channel}, bus is None")
                     continue
 
                 self.can_buses[channel] = bus
-
-                if shared_state.verbose:
-                    print(f"Initialized CAN interface: {channel}")
+                self.logger.info(f"Initialized CAN interface: {channel}")
 
                 # Configure filters: include sensor reply IDs and control reply ID (if controls enabled on this interface)
                 sensors = self.config.sensors.get(channel, [])
@@ -150,16 +148,14 @@ class CANThread(threading.Thread):
                     task = bus.send_periodic(msg, period=period)
                     self.broadcast_tasks.append(task) # save task to list to prevent it being gc'ed
                     
-                    #if shared_state.verbose:
-                    #    print(f"Created scheduled task for sensor {sensor['id']}")
+                    #self.logger.debug(f"Created scheduled task for sensor {sensor['id']}")
 
                 sensors_by_id = {}
                 for sensor in sensors:
                     rep_id = sensor["rep_id"][0]
                     sensors_by_id.setdefault(rep_id, []).append(sensor)
 
-                #if shared_state.verbose:
-                #    print("Starting CAN Notifier")
+                self.logger.debug("Starting CAN Notifier")
 
                 listener = CANListener(sensors_by_id, self.can_control_settings, self.client)
                 notifier = can.Notifier(bus, [listener])
@@ -167,17 +163,15 @@ class CANThread(threading.Thread):
 
             except Exception as e:
                 self.logger.error(f"Error initializing CAN Bus {channel}: {e}")
-                print(f"Error initializing CAN Bus {channel}: {e}")
 
     def stop_thread(self):
         time.sleep(.5)
         self._stop_event.set()
-        print("Stopping CAN thread.")
         for notifier in self.notifiers.values():
             try:
                 notifier.stop()
             except Exception as e:
-                print("Error stopping Notifier: ", e)
+                self.logger.error(f"Error stopping Notifier: {e}")
 
         for channel, bus in self.can_buses.items():
             bus.stop_all_periodic_tasks()
@@ -194,11 +188,13 @@ class CANThread(threading.Thread):
                 self.client.connect('http://localhost:4001', namespaces=['/can'])
             except Exception as e:
                 self.logger.error(f"Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
-                print(f"Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
                 time.sleep(.5)
                 current_retry += 1
-        if shared_state.verbose:
-            print("CAN connected to Socket.IO" if self.client.connected else "CAN failed to connect to Socket.IO.")
+
+        if self.client.connected:
+            self.logger.info(f"CAN connected to Socket.IO")
+        else:
+            self.logger.critical(f"CAN failed to connect to Socket.IO.")
 
 class CANListener(can.Listener):
     def __init__(self, sensors_by_id, control_settings, client):
@@ -239,7 +235,7 @@ class CANListener(can.Listener):
                 data = list(msg.data)
                 if shared_state.verbose:
                     message_hex = " ".join(f"{byte:02X}" for byte in msg.data)
-                    print("Parsing message: ", message_hex)
+                    self.logger.debug("Parsing message: ", message_hex)
 
                 for sensor in self.sensors_by_id[msg.arbitration_id]:
                     if (data[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
@@ -249,8 +245,7 @@ class CANListener(can.Listener):
                         value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
                         converted_value = eval(sensor["scale"], {"value": value})
 
-                        if shared_state.verbose:
-                            print(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
+                        self.logger.debug(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
 
                         if self.client and self.client.connected:
                             self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
@@ -261,17 +256,16 @@ class CANListener(can.Listener):
                 message_data = list(msg.data)
                 self.button_handler.timeout_button()
                 if message_data[-len(self.zero_message):] == self.zero_message:
-                    if shared_state.verbose:
-                        print("Zero message detected. Ignoring CAN Frame.")
+                    self.logger.debug("Zero message detected. Ignoring CAN Frame.")
                     return
 
                 key = tuple(message_data[-self.control_byte_count:])
                 if key in self.control_lookup:
-                    print(f"Pressing: {self.control_lookup[key]}")
+                    self.logger.debug(f"Pressing: {self.control_lookup[key]}")
                     self.button_handler.handle(self.control_lookup[key])
                     return
 
                 message_hex = " ".join(f"{byte:02X}" for byte in message_data)
-                print(f"Unknown control signal received: {message_hex}")
+                self.logger.debug(f"Unknown control signal received: {message_hex}")
         except Exception as e:
-            print("CAN listener error:", e)
+            self.logger.error(f"CAN listener error: {e}")

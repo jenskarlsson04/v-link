@@ -23,14 +23,13 @@ class RTIThread(threading.Thread):
             elif (shared_state.rpiModel == 3):
                 self.rti_serial = serial.Serial('/dev/ttyS0', baudrate = 2400, timeout = 1)
         except serial.SerialException as e:
-            print(f"Error initializing RTI Serial port: {e}")
+            self.logger.error(f"Error initializing RTI Serial port: {e}")
             self.rti_serial = None
 
     def run(self):
         self.run_rti()
         
     def stop_thread(self):
-        print("Stopping RTI thread.")
         time.sleep(.5)
         self.cleanup()
         self._stop_event.set()
@@ -51,7 +50,7 @@ class RTIThread(threading.Thread):
                 self.write(0x20)
                 self.write(0x83)
             except Exception as e:
-                print(f"Error during RTI operation: {e}")
+                self.logger.error(f"Error during RTI operation: {e}")
                 break
 
     def cleanup(self):

@@ -11,15 +11,6 @@ import busio
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 
-i2c = None
-ads = None
-
-try:
-    i2c = busio.I2C(board.SCL, board.SDA)
-    ads = ADS.ADS1115(i2c)
-    ads.gain = 1
-except Exception as e:
-    print("i2c error: ", e)
 PULL_UP = 2000
 STEP = 0.5
 
@@ -27,8 +18,13 @@ STEP = 0.5
 class ADCThread(threading.Thread):
     def __init__(self, logger):
         super().__init__()
+        self.logger = logger
+
         self.client = socketio.Client()
         self._stop_event = threading.Event()
+
+        self.ads = None
+        self.i2c = None
 
         self.channels = []
 
@@ -36,18 +32,26 @@ class ADCThread(threading.Thread):
         self.pressure_data = None
         self.temperature_data = None
 
-        self.logger = logger
-
     def run(self):
-        if (ads):
+        self.init_adc()
+
+        if self.ads:
             self.read_settings()
             self.connect_to_socketio()
             self.start_adc()
 
     def stop_thread(self):
-        print("Stopping ADC thread.")
         time.sleep(.5)
         self._stop_event.set()
+
+    def init_adc(self):
+        try:
+            self.i2c = busio.I2C(board.SCL, board.SDA)
+            self.ads = ADS.ADS1115(self.i2c)
+            self.ads.gain = 1
+        except Exception as e:
+            self.logger.critical(f"I2C initialization failed: {e}")
+            self.ads = None
 
 
     def start_adc(self):
@@ -124,11 +128,11 @@ class ADCThread(threading.Thread):
                 self.client.connect('http://localhost:4001', namespaces=['/adc'])
                 if(shared_state.verbose):
                     if self.client.connected:
-                        print("ADC connected to Socket.IO")
+                        self.logger.info("ADC connected to Socket.IO")
                     else:
-                        print("ADC failed to connect to Socket.IO.")
+                        self.logger.critical("ADC failed to connect to Socket.IO.")
             except Exception as e:
-                print(f"ADCThread: Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
+                self.logger.error(f"ADCThread: Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
                 time.sleep(2)
                 current_retry += 1
 

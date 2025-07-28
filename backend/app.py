@@ -9,11 +9,12 @@ from .shared.shared_state import shared_state
 class APPThread(threading.Thread):
     def __init__(self, logger):
         super().__init__()
+        self.logger = logger
+
         self.url = f"http://localhost:{4001 if shared_state.vite else 5173}"
         self.browser = None
         self._stop_event = threading.Event()
 
-        self.logger = logger
 
     def run(self):
         self.start_browser()
@@ -24,7 +25,6 @@ class APPThread(threading.Thread):
             time.sleep(.1)
 
     def stop_thread(self):
-        print("Stopping APP thread.")
         self._stop_event.set()
         self.close_browser()
         shared_state.toggle_app.clear()
@@ -43,7 +43,7 @@ class APPThread(threading.Thread):
 
 
         self.browser = subprocess.Popen(command, shell=True)
-        if(shared_state.verbose): print(f"Chromium browser started with PID: {self.browser.pid}")
+        self.logger.info(f"Chromium browser started with PID: {self.browser.pid}")
 
     def close_browser(self):
         if self.browser:
@@ -51,8 +51,8 @@ class APPThread(threading.Thread):
                 # Use subprocess to run a command that kills the process and its children
                 subprocess.run(['pkill', '-P', str(self.browser.pid)])
                 self.browser.wait()
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as e:
                 # Handle possible exceptions
-                print("Failed to close App.")
+                self.logger.error(f"Error stopping frontend {e}")
         else:
-            print("Chromium process not found.")
+            self.logger.error("Chromium not found on this system.")

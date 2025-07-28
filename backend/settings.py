@@ -1,8 +1,11 @@
 import os
 import json
 import shutil
+import logging
 
 from backend.shared.shared_state import shared_state
+
+logger = logging.getLogger("vlink")
 
 def load_directory():
     # Specify the directory path
@@ -12,9 +15,9 @@ def load_directory():
     if not os.path.exists(config_directory):
         try:
             os.makedirs(config_directory)
-            #print(f"Created directory at: '{config_directory}'")
+            logger.info(f"Created directory at: '{config_directory}'")
         except Exception as e:
-            print(f"Error creating directory: {e}")
+            logger.critical(f"Error creating directory: {e}")
             return None
 
     return config_directory
@@ -31,19 +34,19 @@ def load_settings(setting):
     if not os.path.exists(destination_path):
         try:
             shutil.copyfile(os.path.join(os.path.dirname(__file__), "config", default_settings_file), destination_path)
-            #print(f"Created settings file at: '{destination_path}'")
+            logger.info(f"Created settings file at: '{destination_path}'")
         except Exception as e:
-            print(f"Error copying default settings file: {e}")
+            logger.critical(f"Error copying default settings file: {e}")
             return None
         
     # Load the JSON settings into Python
     try:
         with open(destination_path, 'r') as file:
             data = json.load(file)
-            if(shared_state.verbose): print(setting + "-settings loaded.")
+            logger.info(setting + "-settings loaded.")
             return data
     except Exception as e:
-        print(f"Error loading settings from '{destination_path}': {e}")
+        logger.critical(f"Error loading settings from '{destination_path}': {e}")
         return None
     
 def save_settings(setting, data):
@@ -58,9 +61,8 @@ def save_settings(setting, data):
     try:
         with open(destination_path, 'w') as file:
             json.dump(data, file, indent=4)
-            #print(setting + "-settings saved.")
     except Exception as e:
-        print(f"Error saving settings to '{destination_path}': {e}")
+        logger.critical(f"Error saving settings to '{destination_path}': {e}")
 
 
 def reset_settings(setting):
@@ -74,6 +76,6 @@ def reset_settings(setting):
     # Reset the settings to the original state
     try:
         shutil.copyfile(os.path.join(os.path.dirname(__file__), "config", default_settings_file), destination_path)
-        #print(f"Reset {setting}-settings to the original state.")
+        #logger.debug(f"Reset {setting}-settings to the original state.")
     except Exception as e:
-        print(f"Error resetting settings: {e}")
+        logger.critical(f"Error resetting settings: {e}")
