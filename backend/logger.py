@@ -12,8 +12,49 @@ import logging
 from logging.handlers import RotatingFileHandler
 import os
 
+import subprocess
+import datetime
+
 LOG_DIR = os.path.expanduser("~/v-link/logs")
 LOG_FILE = os.path.join(LOG_DIR, "logfile.txt")
+
+BOOT_LOG = os.path.join(LOG_DIR, "bootlog.txt")
+BOOT_LOG_OLD = os.path.join(LOG_DIR, "bootlog.prev.txt")
+
+def collect_boot_diagnostics():
+    timestamp = datetime.datetime.now().isoformat()
+    lines = [f"=== Boot Diagnostics Log: {timestamp} ===\n"]
+
+    # Rotate previous bootlog
+    if os.path.exists(BOOT_LOG):
+        os.replace(BOOT_LOG, BOOT_LOG_OLD)
+
+    commands = {
+        "Uptime": "uptime",
+        "Kernel Version": "uname -a",
+        "GPIO Summary": "gpioinfo",
+        "Network Interfaces": "ip link show",
+        "MCP Driver": "dmesg | grep -i mcp25*",
+        "I2C Devices": "i2cdetect -l",
+        "SPI Devices": "ls /dev/spidev*",
+        "SPI / I2C": "dmesg | grep -Ei 'spi|i2c|probe|error'",
+        "Systemd Boot Warnings/Errors": "journalctl -b -p 3..4",  # priority 3 = err, 4 = warning
+        "Recent Kernel Messages": "journalctl -k -n 100",
+    }
+
+    for title, cmd in commands.items():
+        lines.append(f"\n--- {title} ---")
+        lines.append(exec(cmd))
+
+    with open(BOOT_LOG, "w") as f:
+        f.write("\n".join(lines))
+
+def exec(cmd):
+    try:
+        return subprocess.check_output(cmd, shell=True, text=True).strip()
+    except subprocess.CalledProcessError as e:
+        return f"[ERROR] Command '{cmd}' failed: {e}"
+
 
 def logger(verbose=False):
     if not os.path.exists(LOG_DIR):
@@ -37,5 +78,8 @@ def logger(verbose=False):
             console_format = logging.Formatter('%(levelname)s - %(message)s')
             console_handler.setFormatter(console_format)
             logger.addHandler(console_handler)
+
+        # Only collect diagnostics when logger is initialized fresh
+        collect_boot_diagnostics()
 
     return logger
