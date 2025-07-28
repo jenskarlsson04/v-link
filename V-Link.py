@@ -1,7 +1,7 @@
 """
     V-Link - A modular, open-source infotainment system.
     Copyright (C) 2024
-    Author:     Louis Raymond - github.com/lrymnd
+    Author:     Louis Raymond - github.com/BoostedMoose
     Co-Author:  Tigo Passchier - github.com/tigo2000
 
     This program is free software: you can redistribute it and/or modify

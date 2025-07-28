@@ -49,11 +49,7 @@ class IGNThread(threading.Thread):
                 
                 # Check if the state has changed
                 if current_state != previous_state:
-<<<<<<< HEAD
-                    if current_state == 1: #This should be 0 to reflect the IGN in the OFF state. Change to 1 to keep app alive.
-=======
                     if current_state == 0: #IGN_OFF = 0
->>>>>>> vehicle-profiles
                         shared_state.ign_state.clear()  # Ignition is OFF, so clear the state
                     else:
                         shared_state.ign_state.set()  # Ignition is ON, so set the state                    

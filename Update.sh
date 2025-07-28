@@ -35,7 +35,7 @@ echo "[INFO] Updating V-Link..."
 
 # Step 1: Remove the existing V-Link directory
 echo "[INFO] Removing old V-Link files..."
-rm -rf ~/v-link/frontend ~/v-link/backend ~/v-link/V-Link.zip ~/v-link/V-Link.py
+rm -rf ~/v-link/frontend ~/v-link/backend ~/v-link/V-Link.zip ~/v-link/V-Link.py ~/v-link/requirements.txt ~/v-link/Patch.sh
 
 # Step 2: Get latest release URL
 echo "[INFO] Fetching latest release URL from GitHub..."
