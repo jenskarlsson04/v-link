@@ -21,6 +21,10 @@
 import sys
 import os
 import subprocess
+import termios
+import tty
+import shutil
+
 
 def activate_venv():
     venv_path = f"/home/{os.getenv('USER')}/v-link/venv"
@@ -41,7 +45,7 @@ import threading
 import time
 import argparse
 
-
+from pathlib import Path
 from tabulate import tabulate
 
 
@@ -118,6 +122,77 @@ class VLINK:
 
         except FileNotFoundError:
             return 'Not running on a Raspberry Pi or file at /proc/device-tree/model not found.'
+        
+
+    def check_settings(self):
+        current_dir = Path(__file__).parent
+
+        default_dir = current_dir / 'backend' / 'config' / 'profiles'
+        config_dir = os.path.expanduser('~/.config/v-link')
+
+        def show_menu(options):
+            pos = 0
+
+            def print_menu():
+                print("\033[2J\033[H", end="")
+                sys.stdout.flush()  # flush output buffer to terminal immediately
+
+                print("Please make a selection:\n")
+
+                for i, option in enumerate(options):
+                    print("\033[G", end="")
+                    if i == pos:
+                        print("> " + "\033[7m" + option + "\033[0m")
+                    else:
+                        print("  " + option)
+
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+
+            try:
+                tty.setraw(fd)
+                while True:
+                    print_menu()
+                    ch1 = sys.stdin.read(1)
+                    if ch1 == '\x1b':  # Escape sequence start
+                        ch2 = sys.stdin.read(1)
+                        if ch2 == '[':
+                            ch3 = sys.stdin.read(1)
+                            if ch3 == 'A':  # Up arrow
+                                pos = (pos - 1) % len(options)
+                            elif ch3 == 'B':  # Down arrow
+                                pos = (pos + 1) % len(options)
+                    elif ch1 == '\r':  # Enter key
+                        return options[pos]
+                    elif ch1 == '\x03':  # Ctrl-C
+                        return options[0]
+            finally:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+        def copy_files(src_dir, dest_dir):
+            if not os.path.exists(dest_dir):
+                os.makedirs(dest_dir)
+            for filename in os.listdir(src_dir):
+                src_file = os.path.join(src_dir, filename)
+                dest_file = os.path.join(dest_dir, filename)
+                if os.path.isfile(src_file):
+                    shutil.copy2(src_file, dest_file)  # copies file metadata too
+
+        try:
+            if not os.path.isdir(config_dir):
+                options = [f.name for f in default_dir.iterdir() if f.is_dir()]
+
+                selected = show_menu(options)
+                print(f"\nUsing the following vehicle profile: {selected}")
+
+                profile_dir = default_dir / selected
+
+                copy_files(profile_dir, config_dir)
+
+        except Exception as e:
+            print(f"Error: {e}")
+
+
     
     def start_modules(self):
         if shared_state.vCan:
@@ -329,6 +404,7 @@ if __name__ == '__main__':
     vlink = VLINK()
     vlink.start_thread('server', logger)
     vlink.detect_rpi()
+    vlink.check_settings()
 
 
     # Update shared_state based on arguments
