@@ -16,20 +16,39 @@ echo "Starting V-Link Update at $(date)"
 # Run terminal with RTI keep alive message
 lxterminal --title="RTI Keep Alive" --command="sh -c '
 while true; do
-  echo \"Sending RTI keep-alive: 0x40 0x20 0x83\"
   python3 -c \"
 import serial, time
+
+def get_rpi_serial_port():
+    try:
+        with open(\\\"/proc/device-tree/model\\\", \\\"r\\\") as f:
+            model = f.read().strip()
+    except:
+        model = \\\"Unknown\\\"
+        
+    if \\\"Raspberry Pi 5\\\" in model:
+        return \\\"/dev/ttyAMA2\\\"
+    elif \\\"Raspberry Pi 4\\\" in model:
+        return \\\"/dev/ttyAMA3\\\"
+    elif \\\"Raspberry Pi 3\\\" in model:
+        return \\\"/dev/ttyS0\\\"
+    else:
+        raise Exception(f\\\"Unknown Raspberry Pi model: {model}\\\")
+
 try:
-    with serial.Serial(\\\"/dev/ttyAMA2\\\", 2400, timeout=1) as ser:
+    port = get_rpi_serial_port()
+    
+    with serial.Serial(port, 2400, timeout=1) as ser:
         ser.write(bytes([0x40, 0x20, 0x83]))
         time.sleep(0.1)
+    
+    print(\\\"Keep-alive sent successfully\\\")
 except Exception as e:
     print(\\\"Error:\\\", e)
 \"
   sleep 1
 done
 '"
-
 
 echo "Removing old V-Link files..."
 rm -rf "$HOME/v-link/frontend" "$HOME/v-link/backend" "$HOME/v-link/V-Link.zip" "$HOME/v-link/V-Link.py" "$HOME/v-link/requirements.txt" "$HOME/v-link/Patch.sh"
