@@ -254,7 +254,7 @@ class VLINK:
             self.start_thread(thread_name)
 
     def join_threads(self):
-        print('Stopping threads, please wait patiently.')
+        print('\nStopping threads, please wait patiently...\n')
         for thread_name, thread in shared_state.THREADS.items():
             if isinstance(thread, threading.Thread) and thread.is_alive():
                 self.stop_thread(thread_name)
@@ -338,8 +338,6 @@ class VLINK:
             shared_state.update_event.clear()
             shared_state.update = True
             shared_state.exit_event.set()
-            logger.info("Update started, please wait for app to exit.")
-
 
 def clear_screen():
     if os.name == 'nt':
@@ -439,7 +437,6 @@ if __name__ == '__main__':
             time.sleep(.1)
     except KeyboardInterrupt:
             print("\n\nExiting...\n")
-            logger.info('Exiting and cleaning up threads.')
     finally:
             vlink.join_threads()
             logger.info('Done.')
