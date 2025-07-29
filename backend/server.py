@@ -11,6 +11,9 @@ from flask_cors             import CORS
 from .                      import settings
 from .shared.shared_state   import shared_state
 
+import logging
+logger = logging.getLogger("vlink")
+
 # Flask configuration
 server = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist'), static_folder=os.path.join(os.path.dirname(__file__), '..', 'frontend', 'dist', 'assets'), static_url_path='/assets')
 server.config['SECRET_KEY'] = 'v-link'
@@ -23,16 +26,16 @@ socketio = SocketIO(server, cors_allowed_origins="*", async_mode='eventlet')
 modules = ["app", "mmi", "can", "lin", "adc", "rti", "most"]
 
 class ServerThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
         self.daemon = True  # Ensure thread stops when main program exits
         self.app = server
         self.stop_event = threading.Event()
         self.server_socket = eventlet.listen(('0.0.0.0', 4001))
+        
 
     def run(self):
-        if shared_state.verbose:
-            print("Starting Eventlet WSGI server...")
+        logger.info("Starting Eventlet WSGI server...")
 
         try:
             # Run the server in a green thread
@@ -47,7 +50,7 @@ class ServerThread(threading.Thread):
 
 
         except Exception as e:
-            print(e)
+            logger.error(e)
 
     def _serve(self):
         try:
@@ -57,12 +60,10 @@ class ServerThread(threading.Thread):
                 log=open(os.devnull, "w"),  # Suppress logs
             )
         except eventlet.StopServe:
-            if shared_state.verbose:
-                print("Server stopped gracefully.")
+            logger.info("Server stopped gracefully.")
 
     def stop_thread(self):
         if shared_state.verbose:
-            print("Stopping Eventlet server...")
             time.sleep(.5)
 
         # Raise StopServe to terminate the WSGI server loop
@@ -70,25 +71,23 @@ class ServerThread(threading.Thread):
         self.stop_event.set()
 
     def monitor_ignition_state(self):
-        previous_ign_state = None  # Variable to track the previous state of shared_state.ign
+        previous_ignStatus = None  # Variable to track the previous state of shared_state.ign
         
         while not self.stop_event.is_set():
             # Check if shared_state.ign has changed
-            current_ign_state = shared_state.ign_state.is_set()
+            current_ignStatus = shared_state.ignStatus.is_set()
 
             # If the state has changed, send a message to the frontend
-            if current_ign_state != previous_ign_state:
-                if current_ign_state:
-                    if shared_state.verbose:
-                        print("Ignition ON, sending event to frontend.")
+            if current_ignStatus != previous_ignStatus:
+                if current_ignStatus:
+                    logger.debug(f"Ignition ON, sending event to frontend. {shared_state.ignStatus}")
                     socketio.emit('ign', True, namespace='/sys')
                 else:
-                    if shared_state.verbose:
-                        print("Ignition OFF, sending event to frontend.")
+                    logger.debug(f"Ignition OFF, sending event to frontend. {shared_state.ignStatus}")
                     socketio.emit('ign', False, namespace='/sys')
 
                 # Update the previous state to the current state
-                previous_ign_state = current_ign_state
+                previous_ignStatus = current_ignStatus
 
             eventlet.sleep(0.1)  # Allow other tasks to run while checking ignition state
 
@@ -185,8 +184,8 @@ class ServerThread(threading.Thread):
         elif args == 'rti':
             shared_state.rtiStatus = not shared_state.rtiStatus
             shared_state.hdmiStatus = shared_state.rtiStatus
-            if (shared_state.verbose): print("hdmi status", shared_state.hdmiStatus)
-            if (shared_state.verbose): print("rti status", shared_state.rtiStatus)
+            logger.debug(f"HDMI status: {shared_state.hdmiStatus}")
+            logger.debug(f"RTI status: {shared_state.rtiStatus}")
             socketio.emit('state', shared_state.rtiStatus, namespace="/rti")
             shared_state.hdmi_event.set()
         elif args == 'quit':
@@ -196,29 +195,20 @@ class ServerThread(threading.Thread):
         elif args == 'hdmi':
             shared_state.hdmi_event.set()
         elif args == 'update':
-            print('updating app')
             shared_state.update_event.set()
         elif args == 'ign':
-            socketio.emit('ign', shared_state.ign_state.is_set(), namespace="/sys")
+            socketio.emit('ign', shared_state.ignStatus.is_set(), namespace="/sys")
         else:
-            if (shared_state.verbose): print('Unknown action:', args)
+            logger.debug(f"Unknown action: {args}")
 
     @socketio.on('force_switch', namespace='/most')
     def handle_force_switch():
-        if shared_state.verbose:
-            print("Frontend requested PiMost force switch")
-
         most_thread = shared_state.THREADS.get("pimost", None)
 
         if most_thread and most_thread.is_alive():
-            try:
-                most_thread.force_switch()
-            except Exception as e:
-                print("Error calling PiMost force_switch from server.py:", e)
+            most_thread.force_switch()
 
     ## not really used yet, we can perform certain actions based on MOST messages here or in pimost.py
     @socketio.on('most_message', namespace='/most')
     def print_most_message(args):
-        print("received most message on most namespace")
-        print(args)
-
+        logger.debug(f"Received most message on most namespace: {args}")

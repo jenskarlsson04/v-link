@@ -13,6 +13,7 @@ class SharedState:
 
         self.vCan = False
         self.vLin = False
+        self.dev = False
         self.pimost = False
 
         self.vite = True
@@ -37,7 +38,7 @@ class SharedState:
         self.update_event = threading.Event()
         self.hdmi_event = threading.Event() 
 
-        self.ign_state = threading.Event()
+        self.ignStatus = threading.Event()
 
 
         self.shutdown_pi = threading.Event()

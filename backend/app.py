@@ -7,11 +7,14 @@ import signal
 from .shared.shared_state import shared_state
 
 class APPThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
+        self.logger = logger
+
         self.url = f"http://localhost:{4001 if shared_state.vite else 5173}"
         self.browser = None
         self._stop_event = threading.Event()
+
 
     def run(self):
         self.start_browser()
@@ -22,35 +25,58 @@ class APPThread(threading.Thread):
             time.sleep(.1)
 
     def stop_thread(self):
-        print("Stopping APP thread.")
         self._stop_event.set()
         self.close_browser()
         shared_state.toggle_app.clear()
 
 
     def start_browser(self):
-        if shared_state.verbose: log_level_flag = "--log-level=3 >/dev/null 2>&1"
-        else:                    log_level_flag = "--log-level=3 >/dev/null 2>&1"
+        standard_flags = [
+            "--enable-experimental-web-platform-features",
+            "--enable-features=SharedArrayBuffer",
+            "--autoplay-policy=no-user-gesture-required",
+            "--disable-extensions",
+        ]
 
         if shared_state.isKiosk:
-            flags = "--window-size=800,480 --kiosk --enable-experimental-web-platform-features --enable-features=SharedArrayBuffer --autoplay-policy=no-user-gesture-required --disable-extensions  --remote-debugging-port=9222"
-            command = f"chromium-browser --app={self.url} {flags} {log_level_flag}"
+            mode = [
+                "--kiosk",
+                "--ozone-platform=wayland",
+                "--start-maximized"
+            ]
         else:
-            flags = "--window-size=800,480 --disable-resize --enable-experimental-web-platform-features --enable-features=SharedArrayBuffer,OverlayScrollbar --autoplay-policy=no-user-gesture-required"
-            command = f"chromium-browser {self.url} {flags} {log_level_flag}"
+            mode = [
+                "--disable-resize",
+                "--window-size=800,480"
+            ]
 
+        flags = standard_flags + mode
 
-        self.browser = subprocess.Popen(command, shell=True)
-        if(shared_state.verbose): print(f"Chromium browser started with PID: {self.browser.pid}")
+        # Final command as list
+        command = ["chromium-browser", self.url] + flags
+
+        self.browser = subprocess.Popen(command)
+        self.logger.info(f"Chromium browser started with PID: {self.browser.pid}")
+
 
     def close_browser(self):
         if self.browser:
             try:
-                # Use subprocess to run a command that kills the process and its children
-                subprocess.run(['pkill', '-P', str(self.browser.pid)])
-                self.browser.wait()
-            except subprocess.CalledProcessError:
-                # Handle possible exceptions
-                print("Failed to close App.")
+                # First, terminate the main browser process gracefully
+                self.browser.terminate()
+
+                # Wait for the process to exit (timeout to avoid hanging)
+                try:
+                    self.browser.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self.logger.warning("Browser did not terminate in time; killing it now.")
+                    self.browser.kill()
+                    self.browser.wait()
+
+                # Then kill any remaining child processes (optional safety)
+                subprocess.run(['pkill', '-P', str(self.browser.pid)], check=False)
+
+            except Exception as e:
+                self.logger.error(f"Error stopping frontend: {e}")
         else:
-            print("Chromium process not found.")
+            self.logger.error("Chromium not found on this system.")

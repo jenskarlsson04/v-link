@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# V-Link Installer - https://www.github.com/lrymnd/v-link
+# V-Link Installer - https://www.github.com/BoostedMoose/v-link
 
 # CHECK PERMISSION
 if [ $EUID -ne 0 ]; then
@@ -18,7 +18,7 @@ fi
 # HELPER FUNCTIONS
 confirm_action() {
     while true; do
-        read -p "Do you want to $1? (y/n): " choice
+        read -p "$1 (y/n): " choice
         case "$choice" in 
             y|Y ) return 0;;
             n|N ) return 1;;
@@ -37,7 +37,9 @@ user_exit() {
 }
 
 setup_complete() {
+    echo ""
     echo "Setup complete. Drive carefully :)"
+    echo ""
 }
 
 # SETUP
@@ -74,40 +76,21 @@ else
     fi
 fi
 
+
 # Step 1: Update System
-if confirm_action "update the system (Recommended)"; then
-    sudo apt-get update && sudo apt-get upgrade
+if confirm_action "Do you want to update the system? (Recommended)"; then
+    sudo apt-get update -y && sudo apt-get upgrade -y
 fi
 
-# Step 2: Check if Python is installed
+
+# Step 2: Install python
 if ! command -v python &>/dev/null; then
-    if confirm_action "install Python"; then
-        sudo apt-get install -y python3
-    else
-        echo "Python is required. Exiting."
-        exit 1
-    fi
-fi
-
-# Step 3: Check if pip is installed
-if ! command -v pip &>/dev/null; then
-    if confirm_action "install pip"; then
-        sudo apt-get install -y python3-pip
-    else
-        echo "pip is required. Exiting."
-        exit 1
-    fi
+    sudo apt-get install -y python3
+    sudo apt-get install -y python3-pip
 fi
 
 
-
-
-
-
-
-
-
-# Fetch the latest release info from GitHub (no external package needed)
+# Fetch the latest release info from GitHub
 echo "Fetching the latest release URL from GitHub..."
 LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/BoostedMoose/v-link/releases/latest | grep "browser_download_url" | grep "V-Link.zip" | cut -d '"' -f 4)
 
@@ -117,12 +100,8 @@ if [ -z "$LATEST_RELEASE_URL" ]; then
 fi
 
 
-
-
-
-
-# Step 4: Install Volvo V-Link
-if confirm_action "install Boosted Moose V-Link now"; then
+# Step 3: Install Volvo V-Link
+if confirm_action "Do you want to install Boosted Moose V-Link?"; then
     # Step 4.1: Install dependencies
     sudo apt-get install -y ffmpeg libudev-dev libusb-dev build-essential python3-venv
 
@@ -167,31 +146,43 @@ else
 fi
 
 
-# Step 5: Download overlay files to /boot/overlays
-if confirm_action "install the custom DTOverlays? (Required for V-Link HAT)"; then
+# Step 4: Configure Raspberry Pi
+echo "Do you want to continue with the software configuration of the Raspberry Pi?"
+if confirm_action "You can skip this step if you ran the installer before and the Pi is configured."; then
+
+    # Download overlays
+    echo "Download custom DeviceTree overlays, required for the V-Link HAT"
     OVERLAY_DIR="/boot/firmware/overlays"
 
-    # Download the overlays to the determined directory
+    
     sudo wget -O "$OVERLAY_DIR/v-link.dtbo" \
         https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/v-link.dtbo
     sudo wget -O "$OVERLAY_DIR/mcp2515-can1.dtbo" \
         https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/mcp2515-can1.dtbo
     sudo wget -O "$OVERLAY_DIR/mcp2515-can2.dtbo" \
         https://github.com/BoostedMoose/v-link/raw/master/resources/dtoverlays/mcp2515-can2.dtbo
-fi
 
-# Step 6: Append lines to /boot/config.txt or /boot/firmware/config.txt
-if confirm_action "append lines to /boot/firmware/config.txt"; then
+
     # Renaming pwrkey service so ign logic works:
     echo "Renaming /etc/xdg/autostart/pwrkey.desktop to pwrkey.desktop.backup"
     sudo mv /etc/xdg/autostart/pwrkey.desktop /etc/xdg/autostart/pwrkey.desktop.backup
 
     CONFIG_PATH="/boot/firmware/config.txt"
 
-    # Determine RPi version and set config.txt accordingly.
-    if [[ "$rpiModel" -eq 5 ]]; then
-        sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
+    # Check if V-LINK block exists
+    if grep -q '^\[V-LINK' "$CONFIG_PATH"; then
+        if confirm_action "V-LINK config block already exists in $CONFIG_PATH. Overwrite it?"; then
+            sudo sed -i '/^\[V-LINK/,/disable_splash=1/d' "$CONFIG_PATH"
+        else
+            echo "Skipped updating $CONFIG_PATH."
+            SKIP_CONFIG=true
+        fi
+    fi
 
+    if [[ "$SKIP_CONFIG" != true ]]; then
+        # Append the correct config block based on rpiModel (your existing code)
+        if [[ "$rpiModel" -eq 5 ]]; then
+            sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
 [V-LINK RPi5]
 
 #Enable GPIO 0&1
@@ -215,9 +206,8 @@ dtoverlay=gpio-poweroff,gpiopin=0
 disable_splash=1
 EOF'
 
-    elif [[ "$rpiModel" -eq 4 ]]; then
-        sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
-
+        elif [[ "$rpiModel" -eq 4 ]]; then
+            sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
 [V-LINK RPi4]
 
 #Enable GPIO 0&1
@@ -241,9 +231,8 @@ dtoverlay=gpio-poweroff,gpiopin=0
 disable_splash=1
 EOF'
 
-    else
-        sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
-
+        else
+            sudo bash -c 'cat >> /boot/firmware/config.txt <<EOF
 [V-LINK RPi3]
 
 #Enable GPIO 0&1
@@ -267,15 +256,17 @@ dtoverlay=gpio-poweroff,gpiopin=0
 #No Splash on boot
 disable_splash=1
 EOF'
+        fi
     fi
-fi
 
-# Step 7: Configure systemd-networkd for CAN interfaces
-if confirm_action "configure systemd-networkd for V-Link CAN interfaces"; then
+
+    # Setting up sytemd-networkd
     echo "Creating systemd-networkd configuration files for can1 and can2..."
 
-    # Create can1.netdev
-    sudo tee /etc/systemd/network/can1.network > /dev/null <<EOF
+    # Check and possibly overwrite can1.network
+    if [[ -f /etc/systemd/network/can1.network ]]; then
+        if confirm_action "can1.network exists. Overwrite it?"; then
+            sudo tee /etc/systemd/network/can1.network > /dev/null <<EOF
 [Match]
 Name=can1
 
@@ -285,9 +276,26 @@ BitRate=125000
 [Network]
 # raw CAN
 EOF
+        else
+            echo "Skipped overwriting can1.network"
+        fi
+    else
+        sudo tee /etc/systemd/network/can1.network > /dev/null <<EOF
+[Match]
+Name=can1
 
-    # Create can2.netdev
-    sudo tee /etc/systemd/network/can2.network > /dev/null <<EOF
+[CAN]
+BitRate=125000
+
+[Network]
+# raw CAN
+EOF
+    fi
+
+    # Check and possibly overwrite can2.network
+    if [[ -f /etc/systemd/network/can2.network ]]; then
+        if confirm_action "can2.network exists. Overwrite it?"; then
+            sudo tee /etc/systemd/network/can2.network > /dev/null <<EOF
 [Match]
 Name=can2
 
@@ -297,79 +305,110 @@ BitRate=500000
 [Network]
 # raw CAN
 EOF
+        else
+            echo "Skipped overwriting can2.network"
+        fi
+    else
+        sudo tee /etc/systemd/network/can2.network > /dev/null <<EOF
+[Match]
+Name=can2
+
+[CAN]
+BitRate=500000
+
+[Network]
+# raw CAN
+EOF
+    fi
 
     # Enable and restart systemd-networkd
     sudo systemctl enable systemd-networkd
-    
     echo "Systemd-networkd now manages can1 and can2 automatically at boot."
-fi
 
-# Step 8: Load uinput kernel module at boot
-if confirm_action "enable uinput kernel module at boot"; then
+
+    # Load uinput kernel module at boot
     echo "Creating /etc/modules-load.d/uinput.conf..."
-    echo "uinput" | sudo tee /etc/modules-load.d/uinput.conf > /dev/null
+    UINPUT_CONF="/etc/modules-load.d/uinput.conf"
+
+    if [[ -f "$UINPUT_CONF" ]]; then
+        if confirm_action "$UINPUT_CONF exists. Overwrite it?"; then
+            echo "uinput" | sudo tee "$UINPUT_CONF" > /dev/null
+        else
+            echo "Skipped overwriting $UINPUT_CONF."
+        fi
+    else
+        echo "uinput" | sudo tee "$UINPUT_CONF" > /dev/null
+    fi
 
     if [[ $? -eq 0 ]]; then
         echo -e "uinput module will now be auto-loaded at boot.\n"
     else
-        echo -e "Failed to create uinput.conf.\n"
+        echo -e "Failed to create $UINPUT_CONF.\n"
     fi
-fi
 
-# Step 9: Create V-Link udev rules
-if confirm_action "create udev rules for V-Link"; then
+
+
     echo "Creating combined udev rule"
     RULE_FILE=/etc/udev/rules.d/42-v-link.rules
 
-    # Write all rules into a single file
-    echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="1314", ATTR{idProduct}=="152*", MODE="0660", GROUP="plugdev"' | sudo tee $RULE_FILE
-
-    echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.1", NAME="can1"' | sudo tee $RULE_FILE
-    echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.2", NAME="can2"' | sudo tee $RULE_FILE
-    
-    echo 'KERNEL=="ttyS0", MODE="0660", GROUP="plugdev"' | sudo tee -a $RULE_FILE
-    echo 'KERNEL=="uinput", MODE="0660", GROUP="plugdev"' | sudo tee -a $RULE_FILE
-
-    if [[ $? -eq 0 ]]; then
-        echo -e "Permissions created\n"
+    if [[ ! -f "$RULE_FILE" ]] || confirm_action "$RULE_FILE exists. Overwrite it?"; then
+        {
+            echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="1314", ATTR{idProduct}=="152*", MODE="0660", GROUP="plugdev"'
+            echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.1", NAME="can1"'
+            echo 'SUBSYSTEM=="net", ACTION=="add", KERNELS=="spi0.2", NAME="can2"'
+            echo 'KERNEL=="ttyS0", MODE="0660", GROUP="plugdev"'
+            echo 'KERNEL=="uinput", MODE="0660", GROUP="plugdev"'
+        } | sudo tee "$RULE_FILE" > /dev/null && echo -e "Permissions created\n" || echo -e "Unable to create permissions\n"
     else
-        echo -e "Unable to create permissions\n"
+        echo "Skipped creating $RULE_FILE."
     fi
 fi
 
-# Step 10: Create autostart file for V-Link
-if confirm_action "create autostart file for V-Link"; then
+# Step 5: Create autostart file for V-Link
+if confirm_action "Do you want to create an autostart file for V-Link?"; then
+    AUTOSTART_FILE="/etc/xdg/autostart/v-link.desktop"
     output_path="/home/$CURRENT_USER/v-link"
 
-    sudo bash -c "cat > /etc/xdg/autostart/v-link.desktop <<EOL
+    if [[ ! -f "$AUTOSTART_FILE" ]] || confirm_action "$AUTOSTART_FILE exists. Overwrite it?"; then
+        sudo bash -c "cat > $AUTOSTART_FILE <<EOL
 [Desktop Entry]
 Name=V-Link
 Exec=sh -c 'python $output_path/V-Link.py'
 Type=Application
 EOL"
+        echo "Autostart file created or overwritten."
+    else
+        echo "Skipped creating autostart file."
+    fi
 fi
 
-# Step 11: Remove logo and cursor on boot
-if confirm_action "boot the raspberry without logo"; then
-    FILE="/boot/firmware/cmdline.txt"
 
-    # Text to append
+
+# Step 6: Remove logo and cursor on boot
+if confirm_action "Do you want to remove the boot logo?"; then
+    FILE="/boot/firmware/cmdline.txt"
     APPEND_TEXT="logo.nologo vt.global_cursor_default=0"
 
-    # Ensure the file exists
     if [[ ! -f "$FILE" ]]; then
         echo "Error: File $FILE does not exist."
         exit 1
     fi
 
-    sudo sed -i "1{s/$/ $APPEND_TEXT/}" "$FILE"
+    if grep -qF -- "$APPEND_TEXT" "$FILE"; then
+        echo "Entries already present in $FILE."
+    else
+        sudo sed -i "1{s/$/ $APPEND_TEXT/}" "$FILE"
+        echo "Appended entries to $FILE."
+    fi
 fi
 
-# Step 12: Prompt to reboot the system
-if confirm_action "reboot the system now to apply the changes"; then
+
+
+# Step 7: Prompt to reboot the system
+if confirm_action "Please reboot the system now to apply all changes..."; then
     setup_complete
     sudo reboot
 else
-    echo "Reboot was skipped. Please reboot manually to apply the changes."
+    echo "Reboot was skipped. Please reboot manually to apply all changes."
     setup_complete
 fi

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# V-Link Uninstaller - https://www.github.com/lrymnd/v-link
+# V-Link Uninstaller - https://www.github.com/BoostedMoose/v-link
 
 # Function to prompt the user for confirmation
 confirm_action() {

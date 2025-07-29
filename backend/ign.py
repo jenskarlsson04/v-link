@@ -5,8 +5,10 @@ import lgpio
 from .shared.shared_state import shared_state
 
 class IGNThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, logger):
         super().__init__()
+        self.logger = logger
+
         self.IGNITION_PIN = 1
         self.chip = lgpio.gpiochip_open(0)  # Open GPIO chip
 
@@ -16,29 +18,26 @@ class IGNThread(threading.Thread):
     def run(self):
         # Initialize GPIO pin here after the thread starts
         try:
-            # Free GPIO pin if it's already claimed
-            try:
-                lgpio.gpio_free(self.chip, self.IGNITION_PIN)
-            except lgpio.error:
-                print(f"GPIO {self.IGNITION_PIN} ready.")
-            
-            # Now claim the GPIO pin
+            self.release_gpio()
             lgpio.gpio_claim_input(self.chip, self.IGNITION_PIN)
             
             # Monitor ignition pin
             self.monitor_ignition()
         except lgpio.error as e:
-            print(f"Error during GPIO initialization: {e}")
+            self.logger.error(f"Error during GPIO initialization: {e}")
+
 
     def stop_thread(self):
-        print("Stopping IGN thread.")
         self._stop_event.set()
-        # Free GPIO pin when stopping
-        try:
-            lgpio.gpio_free(self.chip, self.IGNITION_PIN)
-        except lgpio.error as e:
-            print(f"Error freeing GPIO {self.IGNITION_PIN}: {e}")
-        lgpio.gpiochip_close(self.chip)  # Close GPIO chip
+        self.release_gpio()
+        lgpio.gpiochip_close(self.chip)
+
+    def release_gpio(self):
+            try:
+                lgpio.gpio_free(self.chip, self.IGNITION_PIN)
+            except lgpio.error as e:
+                self.logger.error(f"Could not release GPIO Pin {self.IGNITION_PIN}: {e}")
+
 
     def monitor_ignition(self):
         previous_state = None  # Variable to track the previous state of the ignition pin
@@ -50,15 +49,16 @@ class IGNThread(threading.Thread):
                 
                 # Check if the state has changed
                 if current_state != previous_state:
-                    if current_state == 0: # Pin is raised high when Ignition is turned off.
-                        shared_state.ign_state.clear()  # Ignition is OFF, so clear the state
+                    if current_state == 0: #IGN_OFF = 0
+                        if not shared_state.dev:
+                            shared_state.ignStatus.clear()  # Ignition is OFF, so clear the state
                     else:
-                        shared_state.ign_state.set()  # Ignition is ON, so set the state                    
+                        shared_state.ignStatus.set()  # Ignition is ON, so set the state                    
                     # Update previous state for the next iteration
                     previous_state = current_state
 
             except lgpio.error as e:
-                print(f"Error reading GPIO {self.IGNITION_PIN}: {e}")
+                self.logger.error(f"Error reading GPIO {self.IGNITION_PIN}: {e}")
                 time.sleep(1)  # Avoid tight looping if there's a problem
                 continue
 
