@@ -187,13 +187,16 @@ class ServerThread(threading.Thread):
             logger.debug(f"HDMI status: {shared_state.hdmiStatus}")
             logger.debug(f"RTI status: {shared_state.rtiStatus}")
             socketio.emit('state', shared_state.rtiStatus, namespace="/rti")
-            shared_state.hdmi_event.set()
+            if not shared_state.dev:
+                shared_state.hdmi_event.set()
         elif args == 'quit':
             shared_state.exit_event.set()
         elif args == 'restart':
             shared_state.restart_event.set()
         elif args == 'hdmi':
-            shared_state.hdmi_event.set()
+            shared_state.hdmiStatus = not shared_state.hdmiStatus
+            if not shared_state.dev:
+                shared_state.hdmi_event.set()
         elif args == 'update':
             shared_state.update_event.set()
         elif args == 'ign':
