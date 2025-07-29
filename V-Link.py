@@ -104,7 +104,7 @@ class VLINK:
                         found = True
                         break
                 if not found:
-                    logger.critical(f"No Raspberry Pi detected.")
+                    logger.error(f"No Raspberry Pi detected.")
                     self.rpiModel = "Unknown"
                     shared_state.rpiModel = 4
 
@@ -245,7 +245,6 @@ class VLINK:
                     logger.error(f"Error stopping thread {thread_name}: {e}")
                 finally:
                     shared_state.THREADS[thread_name] = None
-                    logger.info(f"{thread_name} thread stopped.")
 
 
     def toggle_thread(self, thread_name):
@@ -255,6 +254,7 @@ class VLINK:
             self.start_thread(thread_name)
 
     def join_threads(self):
+        print('Stopping threads, please wait patiently.')
         for thread_name, thread in shared_state.THREADS.items():
             if isinstance(thread, threading.Thread) and thread.is_alive():
                 self.stop_thread(thread_name)
@@ -294,6 +294,7 @@ class VLINK:
         if self.exit_event.is_set():
             logger.info("Exiting App")
             self.exit_event.clear()
+
             shared_state.rtiStatus = False
 
             time.sleep(5)
@@ -334,11 +335,10 @@ class VLINK:
 
     def process_update_event(self):
         if shared_state.update_event.is_set():
-            logger.info("Updating App")
             shared_state.update_event.clear()
-
             shared_state.update = True
             shared_state.exit_event.set()
+            logger.info("Update started, please wait for app to exit.")
 
 
 def clear_screen():
@@ -367,6 +367,7 @@ def setup_arguments():
     parser.add_argument("--vlin", action="store_true", help="Simulate LIN-Bus")
     parser.add_argument("--vite", action="store_false", help="Start on Vite-Port 5173")
     parser.add_argument("--nokiosk", action="store_false", help="Start in windowed mode")
+    parser.add_argument("--dev", action="store_true", help="Development mode")
 
     return parser.parse_args()
 
@@ -374,9 +375,10 @@ def setup_arguments():
 def display_thread_states():
     clear_screen()
     # Display the app name and version
-    print("V-Link 3.0.1 | Boosted Moose")
+    print("V-Link 3.0.2 | Boosted Moose")
     print('Device: ', vlink.rpiModel, ' | ', vlink.rpiProtocol)
-    print(f"RTI Screen: {'Up' if shared_state.rtiStatus else 'Down'}")
+    print(f"RTI state: {'Up' if shared_state.rtiStatus else 'Down'}")
+    print(f"IGN state: {'High' if shared_state.ignStatus else 'Low'}")
     print("")
     print("=" * 52)  # Decorative line
     print("")
@@ -413,9 +415,10 @@ if __name__ == '__main__':
     shared_state.vLin = args.vlin
     shared_state.vite = args.vite
     shared_state.isKiosk = args.nokiosk
+    shared_state.dev = args.dev
 
-    # Update ign status when app launches
-    shared_state.ign_state.set()
+    #Set ignition signal HIGH initially
+    shared_state.ignStatus.set()
 
     # Start main threads:
     vlink.start_modules()
@@ -444,17 +447,20 @@ if __name__ == '__main__':
             if shared_state.update:
                 time.sleep(.5)
 
-                # Close the current app and launch the update process in a new terminal window
+                #Set up update process
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 script_path = os.path.join(current_dir, "Update.sh")
 
+                # Launch updater in a new terminal window
                 try:
                     logger.info("Starting update...")
-                    # This will open a new terminal window and run the update script.
                     subprocess.Popen([
-                        "lxterminal", "--working-directory=~/v-link", "-e", f"bash {script_path}"
+                        "lxterminal",
+                        f"--title=V-Link Updater",
+                        "--command",
+                        f"sh -c 'sh \"{script_path}\"; exec bash'",
                     ])
                 except Exception as e:
-                    logger.critical(f"Update failed: {e}")
+                    logger.error(f"Update failed: {e}")
 
             sys.exit(0)

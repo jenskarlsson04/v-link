@@ -50,9 +50,10 @@ class IGNThread(threading.Thread):
                 # Check if the state has changed
                 if current_state != previous_state:
                     if current_state == 0: #IGN_OFF = 0
-                        shared_state.ign_state.clear()  # Ignition is OFF, so clear the state
+                        if not shared_state.dev:
+                            shared_state.ignStatus.clear()  # Ignition is OFF, so clear the state
                     else:
-                        shared_state.ign_state.set()  # Ignition is ON, so set the state                    
+                        shared_state.ignStatus.set()  # Ignition is ON, so set the state                    
                     # Update previous state for the next iteration
                     previous_state = current_state
 

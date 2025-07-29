@@ -50,7 +50,7 @@ class ADCThread(threading.Thread):
             self.ads = ADS.ADS1115(self.i2c)
             self.ads.gain = 1
         except Exception as e:
-            self.logger.critical(f"I2C initialization failed: {e}")
+            self.logger.error(f"I2C initialization failed: {e}")
             self.ads = None
 
 
@@ -130,7 +130,7 @@ class ADCThread(threading.Thread):
                     if self.client.connected:
                         self.logger.info("ADC connected to Socket.IO")
                     else:
-                        self.logger.critical("ADC failed to connect to Socket.IO.")
+                        self.logger.error("ADC failed to connect to Socket.IO.")
             except Exception as e:
                 self.logger.error(f"ADCThread: Socket.IO connection failed. Retry {current_retry}/{max_retries}. Error: {e}")
                 time.sleep(2)

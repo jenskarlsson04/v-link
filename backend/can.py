@@ -194,7 +194,7 @@ class CANThread(threading.Thread):
         if self.client.connected:
             self.logger.info(f"CAN connected to Socket.IO")
         else:
-            self.logger.critical(f"CAN failed to connect to Socket.IO.")
+            self.logger.error(f"CAN failed to connect to Socket.IO.")
 
 class CANListener(can.Listener):
     def __init__(self, sensors_by_id, control_settings, client):

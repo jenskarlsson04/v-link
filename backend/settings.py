@@ -17,7 +17,7 @@ def load_directory():
             os.makedirs(config_directory)
             logger.info(f"Created directory at: '{config_directory}'")
         except Exception as e:
-            logger.critical(f"Error creating directory: {e}")
+            logger.error(f"Error creating directory: {e}")
             return None
 
     return config_directory
@@ -36,7 +36,7 @@ def load_settings(setting):
             shutil.copyfile(os.path.join(os.path.dirname(__file__), "config", default_settings_file), destination_path)
             logger.info(f"Created settings file at: '{destination_path}'")
         except Exception as e:
-            logger.critical(f"Error copying default settings file: {e}")
+            logger.error(f"Error copying default settings file: {e}")
             return None
         
     # Load the JSON settings into Python
@@ -46,7 +46,7 @@ def load_settings(setting):
             logger.info(setting + "-settings loaded.")
             return data
     except Exception as e:
-        logger.critical(f"Error loading settings from '{destination_path}': {e}")
+        logger.error(f"Error loading settings from '{destination_path}': {e}")
         return None
     
 def save_settings(setting, data):
@@ -62,7 +62,7 @@ def save_settings(setting, data):
         with open(destination_path, 'w') as file:
             json.dump(data, file, indent=4)
     except Exception as e:
-        logger.critical(f"Error saving settings to '{destination_path}': {e}")
+        logger.error(f"Error saving settings to '{destination_path}': {e}")
 
 
 def reset_settings(setting):
@@ -78,4 +78,4 @@ def reset_settings(setting):
         shutil.copyfile(os.path.join(os.path.dirname(__file__), "config", default_settings_file), destination_path)
         #logger.debug(f"Reset {setting}-settings to the original state.")
     except Exception as e:
-        logger.critical(f"Error resetting settings: {e}")
+        logger.error(f"Error resetting settings: {e}")

@@ -71,23 +71,23 @@ class ServerThread(threading.Thread):
         self.stop_event.set()
 
     def monitor_ignition_state(self):
-        previous_ign_state = None  # Variable to track the previous state of shared_state.ign
+        previous_ignStatus = None  # Variable to track the previous state of shared_state.ign
         
         while not self.stop_event.is_set():
             # Check if shared_state.ign has changed
-            current_ign_state = shared_state.ign_state.is_set()
+            current_ignStatus = shared_state.ignStatus.is_set()
 
             # If the state has changed, send a message to the frontend
-            if current_ign_state != previous_ign_state:
-                if current_ign_state:
-                    logger.debug("Ignition ON, sending event to frontend.")
+            if current_ignStatus != previous_ignStatus:
+                if current_ignStatus:
+                    logger.debug(f"Ignition ON, sending event to frontend. {shared_state.ignStatus}")
                     socketio.emit('ign', True, namespace='/sys')
                 else:
-                    logger.debug("Ignition ON, sending event to frontend.")
+                    logger.debug(f"Ignition OFF, sending event to frontend. {shared_state.ignStatus}")
                     socketio.emit('ign', False, namespace='/sys')
 
                 # Update the previous state to the current state
-                previous_ign_state = current_ign_state
+                previous_ignStatus = current_ignStatus
 
             eventlet.sleep(0.1)  # Allow other tasks to run while checking ignition state
 
@@ -197,7 +197,7 @@ class ServerThread(threading.Thread):
         elif args == 'update':
             shared_state.update_event.set()
         elif args == 'ign':
-            socketio.emit('ign', shared_state.ign_state.is_set(), namespace="/sys")
+            socketio.emit('ign', shared_state.ignStatus.is_set(), namespace="/sys")
         else:
             logger.debug(f"Unknown action: {args}")
 
