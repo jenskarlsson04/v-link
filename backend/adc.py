@@ -66,7 +66,7 @@ class ADCThread(threading.Thread):
 
         for i, (sensor_name, sensor_details) in enumerate(self.sensor_data["sensors"].items()):
             channel = sensor_details["channel"]
-            analog_in_instance = AnalogIn(ads, getattr(ADS, channel))
+            analog_in_instance = AnalogIn(self.ads, getattr(ADS, channel))
             self.channels.append(analog_in_instance)
 
 
