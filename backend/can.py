@@ -157,7 +157,7 @@ class CANThread(threading.Thread):
 
                 self.logger.debug("Starting CAN Notifier")
 
-                listener = CANListener(sensors_by_id, self.can_control_settings, self.client)
+                listener = CANListener(sensors_by_id, self.can_control_settings, self.client, self.logger)
                 notifier = can.Notifier(bus, [listener])
                 self.notifiers[channel] = notifier
 
@@ -197,7 +197,9 @@ class CANThread(threading.Thread):
             self.logger.error(f"CAN failed to connect to Socket.IO.")
 
 class CANListener(can.Listener):
-    def __init__(self, sensors_by_id, control_settings, client):
+    def __init__(self, sensors_by_id, control_settings, client, logger):
+        self.logger = logger
+
         self.sensors_by_id = sensors_by_id
         self.control_settings = control_settings
         self.client = client
@@ -235,7 +237,7 @@ class CANListener(can.Listener):
                 data = list(msg.data)
                 if shared_state.verbose:
                     message_hex = " ".join(f"{byte:02X}" for byte in msg.data)
-                    self.logger.debug("Parsing message: ", message_hex)
+                    self.logger.debug(f"Parsing message: {message_hex}")
 
                 for sensor in self.sensors_by_id[msg.arbitration_id]:
                     if (data[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
