@@ -80,10 +80,10 @@ class ServerThread(threading.Thread):
             # If the state has changed, send a message to the frontend
             if current_ignStatus != previous_ignStatus:
                 if current_ignStatus:
-                    logger.debug(f"Ignition ON, sending event to frontend. {shared_state.ignStatus}")
+                    logger.debug("Ignition ON, sending event to frontend.")
                     socketio.emit('ign', True, namespace='/sys')
                 else:
-                    logger.debug(f"Ignition OFF, sending event to frontend. {shared_state.ignStatus}")
+                    logger.debug("Ignition OFF, sending event to frontend.")
                     socketio.emit('ign', False, namespace='/sys')
 
                 # Update the previous state to the current state

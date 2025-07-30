@@ -36,6 +36,8 @@ class APPThread(threading.Thread):
             "--enable-features=SharedArrayBuffer",
             "--autoplay-policy=no-user-gesture-required",
             "--disable-extensions",
+            "--disable-logging",
+            "--log-level=3"
         ]
 
         if shared_state.isKiosk:
@@ -55,7 +57,13 @@ class APPThread(threading.Thread):
         # Final command as list
         command = ["chromium-browser", self.url] + flags
 
-        self.browser = subprocess.Popen(command)
+        self.browser = subprocess.Popen(
+            command,
+            stdout=subprocess.DEVNULL,  # or subprocess.PIPE if you want logs
+            stderr=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL
+        )
+        #self.browser = subprocess.Popen(command)
         self.logger.info(f"Chromium browser started with PID: {self.browser.pid}")
 
 
