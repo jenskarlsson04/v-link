@@ -19,7 +19,7 @@
     ],
     "sensors": {
         "boost": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": true,
             "type": "diagnostic",
             "parameter": [
@@ -32,7 +32,7 @@
             "action": "0xA6",
             "target": "0x11",
             "is_16bit": true,
-            "refresh_rate": 0.2,
+            "refresh_rate": 1,
             "scale": "((value * 0.001)-0.98)",
             "label": "Boost",
             "unit": "Bar",
@@ -41,7 +41,7 @@
             "limit_start": 2
         },
         "intake": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": true,
             "type": "diagnostic",
             "parameter": [
@@ -63,7 +63,7 @@
             "limit_start": 60
         },
         "coolant": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": true,
             "type": "diagnostic",
             "parameter": [
@@ -85,7 +85,7 @@
             "limit_start": 100
         },
         "voltage": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": true,
             "type": "diagnostic",
             "parameter": [
@@ -107,7 +107,7 @@
             "limit_start": 16
         },
         "lambda1": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": false,
             "type": "diagnostic",
             "parameter": [
@@ -129,7 +129,7 @@
             "limit_start": 2
         },
         "lambda2": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": false,
             "type": "diagnostic",
             "parameter": [
@@ -151,7 +151,7 @@
             "limit_start": 2
         },
         "rpm": {
-            "interface": "can1",
+            "interface": "can2",
             "enabled": true,
             "type": "diagnostic",
             "parameter": [
@@ -164,7 +164,7 @@
             "action": "0xA6",
             "target": "0x11",
             "is_16bit": true,
-            "refresh_rate": 0.1,
+            "refresh_rate": 0.3,
             "scale": "(value * 1)",
             "label": "RPM",
             "unit": "rpm",
@@ -173,8 +173,8 @@
             "limit_start":4500
         },
         "speed": {
-            "interface": "can1",
-            "enabled": false,
+            "interface": "can2",
+            "enabled": true,
             "type": "diagnostic",
             "parameter": [
                 "0x00",
@@ -186,7 +186,7 @@
             "action": "0xA6",
             "target": "0x11",
             "is_16bit": true,
-            "refresh_rate": 0.3,
+            "refresh_rate": 1,
             "scale": "(value * 0.01)",
             "label": "Speed",
             "unit": "km/h",
@@ -197,7 +197,7 @@
     },
     "controls": {
         "enabled": true,
-        "interface": "can2",
+        "interface": "can1",
         "rep_id": "0x0131726C",
         "zero_message": ["0x00", "0x00", "0x3F"],
         "control_byte_count": 2,
@@ -209,12 +209,12 @@
             ],
             "BTN_ENTER": [
                 ["0x20", "0x3F"],
-				["0xA0", "0x3F"],
-				["0x60", "0x3F"]
+                ["0xA0", "0x3F"],
+                ["0x60", "0x3F"]
             ],
             "BTN_YES": [
-		        ["0x00", "0x2F"],
-		        ["0x80", "0x2F"],
+                ["0x00", "0x2F"],
+                ["0x80", "0x2F"],
                 ["0x40", "0x2F"]
             ],
             "BTN_NO": [
