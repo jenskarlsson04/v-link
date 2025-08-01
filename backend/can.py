@@ -42,7 +42,6 @@ class Config:
                 if iface not in self.sensors:
                     self.sensors[iface] = []
 
-                sensor_type = sensor.get('type', 'diagnostic')
                 rep_id = int(sensor['rep_id'], 16)
                 refresh_rate = sensor.get('refresh_rate', 0.5)
                 scale = sensor["scale"]
@@ -51,7 +50,6 @@ class Config:
                     raise ValueError(f"Invalid scale format for sensor {key}")
 
                 config_entry = {
-                    "type": sensor_type,
                     "rep_id": [rep_id],
                     "scale": scale,
                     "is_16bit": sensor.get('is_16bit', False),
@@ -60,29 +58,22 @@ class Config:
                     "last_requested_time": 0
                 }
 
-                if sensor_type == 'diagnostic':
-                    req_id = int(sensor['req_id'], 16)
-                    target = int(sensor['target'], 16)
-                    action = int(sensor['action'], 16)
-                    parameter0 = int(sensor['parameter'][0], 16)
-                    parameter1 = int(sensor['parameter'][1], 16)
+                req_id = int(sensor['req_id'], 16)
+                target = int(sensor['target'], 16)
+                action = int(sensor['action'], 16)
+                parameter0 = int(sensor['parameter'][0], 16)
+                parameter1 = int(sensor['parameter'][1], 16)
 
-                    message_data = [rep_id, target, action, parameter0, parameter1]
-                    message_data = [byte for byte in message_data if byte != 0]
-                    dlc = 0xC8 + len(message_data)
+                message_data = [rep_id, target, action, parameter0, parameter1]
+                message_data = [byte for byte in message_data if byte != 0]
+                dlc = 0xC8 + len(message_data)
 
-                    message_bytes = [dlc, target, action, parameter0, parameter1, 0x01, 0x00, 0x00]
+                message_bytes = [dlc, target, action, parameter0, parameter1, 0x01, 0x00, 0x00]
 
-                    config_entry.update({
-                        "req_id": [req_id],
-                        "message_bytes": message_bytes,
-                    })
-                else:  # broadcast sensor
-                    data_bytes = sensor.get('data_bytes', [5, 6])
-                    config_entry.update({
-                        "req_id": [rep_id],  # placeholder, not used
-                        "data_bytes": data_bytes,
-                    })
+                config_entry.update({
+                    "req_id": [req_id],
+                    "message_bytes": message_bytes,
+                })
 
                 self.sensors[iface].append(config_entry)
 
@@ -136,7 +127,7 @@ class CANThread(threading.Thread):
 
         self.can_buses = {}         # can interfaces
         self.notifiers = {}         # can filters (using a callback)
-        self.broadcast_tasks = []   # scheduled tasks to send can messages
+        self.periodic_tasks = []    # scheduled tasks to send diagnostic requests
 
         
     def run(self):
@@ -186,8 +177,7 @@ class CANThread(threading.Thread):
                 bus.set_filters(filters)
 
                 # Configure scheduled tasks to send diagnostic CAN requests
-                filtered_sensors = [sensor for sensor in sensors if sensor.get("type") == "diagnostic"]
-                for sensor in filtered_sensors:
+                for sensor in sensors:
                     msg = can.Message(
                         arbitration_id=sensor["req_id"][0],
                         data=sensor["message_bytes"],
@@ -196,7 +186,7 @@ class CANThread(threading.Thread):
                     period = sensor.get("refresh_rate", 1) # default to 1 second if not supplied
 
                     task = bus.send_periodic(msg, period=period)
-                    self.broadcast_tasks.append(task) # save task to list to prevent it being gc'ed
+                    self.periodic_tasks.append(task)  # save task to list to prevent it being gc'ed
                     
                     #self.logger.debug(f"Created scheduled task for sensor {sensor['id']}")
 
@@ -294,20 +284,13 @@ class CANListener(can.Listener):
                     self.logger.debug("Parsing message: ", message_hex)
 
                 for sensor in self.sensors_by_id[msg.arbitration_id]:
-                    if sensor['type'] == 'diagnostic':
-                        if (data[2] != sensor['message_bytes'][2] and
-                            data[3] == sensor["message_bytes"][3] and
-                            data[4] == sensor["message_bytes"][4]):
+                    if (data[2] != sensor['message_bytes'][2] and
+                        data[3] == sensor["message_bytes"][3] and
+                        data[4] == sensor["message_bytes"][4]):
 
-                            value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
-                        else:
-                            continue
-                    else:  # broadcast sensor
-                        bytes_idx = sensor.get('data_bytes', [5, 6])
-                        if sensor["is_16bit"] and len(bytes_idx) >= 2:
-                            value = (data[bytes_idx[0]] << 8) | data[bytes_idx[1]]
-                        else:
-                            value = data[bytes_idx[0]]
+                        value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
+                    else:
+                        continue
 
                     converted_value = eval(sensor["scale"], {"value": value})
 

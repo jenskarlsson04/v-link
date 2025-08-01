@@ -172,21 +172,6 @@
             "max_value": 8000,
             "limit_start":7000
         },
-        "rpm_broadcast": {
-            "interface": "can2",
-            "enabled": false,
-            "type": "broadcast",
-            "rep_id": "0x02803008",
-            "data_bytes": [1, 6],
-            "app_id": "rpm",
-            "is_16bit": true,
-            "scale": "(value * 1)",
-            "label": "RPM",
-            "unit": "rpm",
-            "min_value": 0,
-            "max_value": 8000,
-            "limit_start": 7000
-        },
         "speed": {
             "interface": "can2",
             "enabled": false,

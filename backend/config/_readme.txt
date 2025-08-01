@@ -34,16 +34,6 @@
 //      limit_start: 1.5,                   // Start of redline for gauge setup
 //  },
 
-//  Broadcast example:
-//  "rpm_broadcast": {
-//      interface: "can1",
-//      type: "broadcast",                 // Read value from incoming frame
-//      rep_id: rep_id[0],                  // ID of the broadcast message
-//      data_bytes: [1, 6],                 // Byte indices containing the value
-//      is_16bit: true,
-//      scale: '(value * 1)'
-//  }
-
 //  Live sensor example:
 //  "rpm": {
 //      interface: "can2",
