@@ -40,37 +40,49 @@ class Config:
                 if iface not in self.sensors:
                     self.sensors[iface] = []
 
-                req_id = int(sensor['req_id'], 16)
+                sensor_type = sensor.get('type', 'diagnostic')
                 rep_id = int(sensor['rep_id'], 16)
-                target = int(sensor['target'], 16)
-                action = int(sensor['action'], 16)
-                parameter0 = int(sensor['parameter'][0], 16)
-                parameter1 = int(sensor['parameter'][1], 16)
-
-                # calculate dlc
-                message_data = [rep_id, target, action, parameter0, parameter1]
-                message_data = [byte for byte in message_data if byte != 0]
-                dlc = 0xC8 + len(message_data)
-
-                message_bytes = [dlc, target, action, parameter0, parameter1, 0x01, 0x00, 0x00]
                 refresh_rate = sensor.get('refresh_rate', 0.5)
                 scale = sensor["scale"]
 
-                # check scale calculation
                 if not isinstance(scale, str) or "value" not in scale:
                     raise ValueError(f"Invalid scale format for sensor {key}")
 
-                self.sensors[iface].append({
-                    "type": sensor['type'],
-                    "req_id": [req_id],
+                config_entry = {
+                    "type": sensor_type,
                     "rep_id": [rep_id],
-                    "message_bytes": message_bytes,
                     "scale": scale,
-                    "is_16bit": sensor['is_16bit'],
+                    "is_16bit": sensor.get('is_16bit', False),
                     "id": sensor['app_id'],
                     "refresh_rate": refresh_rate,
                     "last_requested_time": 0
-                })
+                }
+
+                if sensor_type == 'diagnostic':
+                    req_id = int(sensor['req_id'], 16)
+                    target = int(sensor['target'], 16)
+                    action = int(sensor['action'], 16)
+                    parameter0 = int(sensor['parameter'][0], 16)
+                    parameter1 = int(sensor['parameter'][1], 16)
+
+                    message_data = [rep_id, target, action, parameter0, parameter1]
+                    message_data = [byte for byte in message_data if byte != 0]
+                    dlc = 0xC8 + len(message_data)
+
+                    message_bytes = [dlc, target, action, parameter0, parameter1, 0x01, 0x00, 0x00]
+
+                    config_entry.update({
+                        "req_id": [req_id],
+                        "message_bytes": message_bytes,
+                    })
+                else:  # broadcast sensor
+                    data_bytes = sensor.get('data_bytes', [5, 6])
+                    config_entry.update({
+                        "req_id": [rep_id],  # placeholder, not used
+                        "data_bytes": data_bytes,
+                    })
+
+                self.sensors[iface].append(config_entry)
 
                 self.logger.debug(f"Loaded sensor '{key}' on {iface}")
             except Exception as e:
@@ -238,18 +250,28 @@ class CANListener(can.Listener):
                     self.logger.debug("Parsing message: ", message_hex)
 
                 for sensor in self.sensors_by_id[msg.arbitration_id]:
-                    if (data[2] != sensor['message_bytes'][2] and  # Exclude request message (0xA6)
-                        data[3] == sensor["message_bytes"][3] and  # match parameter0
-                        data[4] == sensor["message_bytes"][4]):    # match parameter1
+                    if sensor['type'] == 'diagnostic':
+                        if (data[2] != sensor['message_bytes'][2] and
+                            data[3] == sensor["message_bytes"][3] and
+                            data[4] == sensor["message_bytes"][4]):
 
-                        value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
-                        converted_value = eval(sensor["scale"], {"value": value})
+                            value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
+                        else:
+                            continue
+                    else:  # broadcast sensor
+                        bytes_idx = sensor.get('data_bytes', [5, 6])
+                        if sensor["is_16bit"] and len(bytes_idx) >= 2:
+                            value = (data[bytes_idx[0]] << 8) | data[bytes_idx[1]]
+                        else:
+                            value = data[bytes_idx[0]]
 
-                        self.logger.debug(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
+                    converted_value = eval(sensor["scale"], {"value": value})
 
-                        if self.client and self.client.connected:
-                            self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
-                        return  # Process only one sensor per message
+                    self.logger.debug(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
+
+                    if self.client and self.client.connected:
+                        self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
+                    return  # Process only one sensor per message
 
             # Process control messages if enabled
             if self.control_settings['enabled'] and msg.arbitration_id == self.control_reply_id:
