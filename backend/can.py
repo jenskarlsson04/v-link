@@ -127,9 +127,16 @@ class CANThread(threading.Thread):
                 for sensor in sensors:
                     rep_ids.add(sensor["rep_id"][0])
 
-                if self.can_control_settings['enabled'] and self.can_control_settings["interface"] == channel:
-                    control_rep_id = int(self.can_control_settings['rep_id'], 16)
-                    rep_ids.add(control_rep_id)
+                if (
+                    self.can_control_settings.get('enabled') and
+                    self.can_control_settings.get("interface") == channel and
+                    self.can_control_settings.get("rep_id")
+                ):
+                    try:
+                        control_rep_id = int(self.can_control_settings['rep_id'], 16)
+                        rep_ids.add(control_rep_id)
+                    except ValueError as e:
+                        self.logger.error(f"Invalid control rep_id for channel {channel}: {e}")
 
                 # Set up filters for all reply_ids
                 filters = [{"can_id": rep_id, "can_mask": 0x1FFFFFFF if is_extended else 0x7FF, "extended": is_extended} for rep_id in rep_ids]
