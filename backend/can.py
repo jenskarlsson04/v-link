@@ -202,7 +202,7 @@ class CANThread(threading.Thread):
 
                 self.logger.debug("Starting CAN Notifier")
 
-                listener = CANListener(sensors_by_id, live_sensors_by_id, self.can_control_settings, self.client)
+                listener = CANListener(sensors_by_id, live_sensors_by_id, self.can_control_settings, self.client, self.logger)
                 notifier = can.Notifier(bus, [listener])
                 self.notifiers[channel] = notifier
 
@@ -242,11 +242,12 @@ class CANThread(threading.Thread):
             self.logger.error(f"CAN failed to connect to Socket.IO.")
 
 class CANListener(can.Listener):
-    def __init__(self, sensors_by_id, live_sensors_by_id, control_settings, client):
+    def __init__(self, sensors_by_id, live_sensors_by_id, control_settings, client, logger):
         self.sensors_by_id = sensors_by_id
         self.live_sensors_by_id = live_sensors_by_id
         self.control_settings = control_settings
         self.client = client
+        self.logger = logger
 
         # Control parameters
         self.zero_message = [int(byte, 16) for byte in control_settings['zero_message']]
