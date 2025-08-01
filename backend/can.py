@@ -267,6 +267,12 @@ class CANListener(can.Listener):
 
                     converted_value = eval(sensor["scale"], {"value": value})
 
+                    if sensor['id'] == 'rpm':
+                        try:
+                            print(f"[RPM] raw value: {value}, converted: {float(converted_value)} rpm")
+                        except Exception:
+                            print(f"[RPM] value: {converted_value}")
+
                     self.logger.debug(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
 
                     if self.client and self.client.connected:
