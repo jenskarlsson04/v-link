@@ -170,6 +170,7 @@ class CANThread(threading.Thread):
                 # Configure filters: include sensor reply IDs and control reply ID (if controls enabled on this interface)
                 sensors = self.config.sensors.get(channel, [])
                 live_sensors = self.config.live_sensors.get(channel, [])
+
                 rep_ids = set()
                 for sensor in sensors:
                     rep_ids.add(sensor["rep_id"][0])
@@ -203,13 +204,15 @@ class CANThread(threading.Thread):
                 for sensor in sensors:
                     rep_id = sensor["rep_id"][0]
                     sensors_by_id.setdefault(rep_id, []).append(sensor)
+
+                live_sensors_by_id = {}
                 for sensor in live_sensors:
                     rep_id = sensor["rep_id"]
-                    sensors_by_id.setdefault(rep_id, []).append(sensor)
+                    live_sensors_by_id.setdefault(rep_id, []).append(sensor)
 
                 self.logger.debug("Starting CAN Notifier")
 
-                listener = CANListener(sensors_by_id, self.can_control_settings, self.client)
+                listener = CANListener(sensors_by_id, live_sensors_by_id, self.can_control_settings, self.client)
                 notifier = can.Notifier(bus, [listener])
                 self.notifiers[channel] = notifier
 
@@ -249,8 +252,9 @@ class CANThread(threading.Thread):
             self.logger.error(f"CAN failed to connect to Socket.IO.")
 
 class CANListener(can.Listener):
-    def __init__(self, sensors_by_id, control_settings, client):
+    def __init__(self, sensors_by_id, live_sensors_by_id, control_settings, client):
         self.sensors_by_id = sensors_by_id
+        self.live_sensors_by_id = live_sensors_by_id
         self.control_settings = control_settings
         self.client = client
 
@@ -298,12 +302,39 @@ class CANListener(can.Listener):
                             value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
                         else:
                             continue
-                    else:  # broadcast or live sensor
+                    else:  # broadcast sensor
                         bytes_idx = sensor.get('data_bytes', [5, 6])
                         if sensor["is_16bit"] and len(bytes_idx) >= 2:
                             value = (data[bytes_idx[0]] << 8) | data[bytes_idx[1]]
                         else:
                             value = data[bytes_idx[0]]
+
+                    converted_value = eval(sensor["scale"], {"value": value})
+
+                    if sensor['id'] == 'rpm':
+                        try:
+                            print(f"[RPM] raw value: {value}, converted: {float(converted_value)} rpm")
+                        except Exception:
+                            print(f"[RPM] value: {converted_value}")
+
+                    self.logger.debug(f"Sending message for {sensor['id']} to frontend with value {converted_value}")
+
+                    if self.client and self.client.connected:
+                        self.client.emit("data", f"{sensor['id']}:{float(converted_value)}", namespace="/can")
+                    return  # Process only one sensor per message
+
+            if msg.arbitration_id in self.live_sensors_by_id:
+                data = list(msg.data)
+                if shared_state.verbose:
+                    message_hex = " ".join(f"{byte:02X}" for byte in msg.data)
+                    self.logger.debug("Parsing live message: ", message_hex)
+
+                for sensor in self.live_sensors_by_id[msg.arbitration_id]:
+                    bytes_idx = sensor.get('data_bytes', [5, 6])
+                    if sensor["is_16bit"] and len(bytes_idx) >= 2:
+                        value = (data[bytes_idx[0]] << 8) | data[bytes_idx[1]]
+                    else:
+                        value = data[bytes_idx[0]]
 
                     converted_value = eval(sensor["scale"], {"value": value})
 
