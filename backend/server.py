@@ -80,10 +80,10 @@ class ServerThread(threading.Thread):
             # If the state has changed, send a message to the frontend
             if current_ignStatus != previous_ignStatus:
                 if current_ignStatus:
-                    logger.debug(f"Ignition ON, sending event to frontend. {shared_state.ignStatus}")
+                    logger.debug("Ignition ON, sending event to frontend.")
                     socketio.emit('ign', True, namespace='/sys')
                 else:
-                    logger.debug(f"Ignition OFF, sending event to frontend. {shared_state.ignStatus}")
+                    logger.debug("Ignition OFF, sending event to frontend.")
                     socketio.emit('ign', False, namespace='/sys')
 
                 # Update the previous state to the current state
@@ -187,13 +187,16 @@ class ServerThread(threading.Thread):
             logger.debug(f"HDMI status: {shared_state.hdmiStatus}")
             logger.debug(f"RTI status: {shared_state.rtiStatus}")
             socketio.emit('state', shared_state.rtiStatus, namespace="/rti")
-            shared_state.hdmi_event.set()
+            if not shared_state.dev:
+                shared_state.hdmi_event.set()
         elif args == 'quit':
             shared_state.exit_event.set()
         elif args == 'restart':
             shared_state.restart_event.set()
         elif args == 'hdmi':
-            shared_state.hdmi_event.set()
+            shared_state.hdmiStatus = not shared_state.hdmiStatus
+            if not shared_state.dev:
+                shared_state.hdmi_event.set()
         elif args == 'update':
             shared_state.update_event.set()
         elif args == 'ign':

@@ -429,7 +429,7 @@ if __name__ == '__main__':
             vlink.process_exit_event()
             vlink.process_restart_event()
             vlink.process_update_event()
-            #v-link.process_hdmi_event() # temporarily disabled
+            #vlink.process_hdmi_event() Removed until confirmed by SuberPL
 
             if not shared_state.verbose:
                 display_thread_states()

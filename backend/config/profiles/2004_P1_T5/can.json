@@ -198,7 +198,7 @@
     "controls": {
         "enabled": false,
         "interface": "",
-        "rep_id": "",
+        "rep_id": "0x00000000",
         "zero_message": [],
         "control_byte_count": 2,
         "button": {
