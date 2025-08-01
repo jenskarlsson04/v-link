@@ -43,3 +43,12 @@
 //      is_16bit: true,
 //      scale: '(value * 1)'
 //  }
+
+//  Live sensor example:
+//  "rpm": {
+//      interface: "can2",
+//      rep_id: rep_id[0],                  // ID of the live message
+//      data_bytes: [6, 7],                 // Byte indices containing the value
+//      is_16bit: true,
+//      scale: '(value * 1)'
+//  }

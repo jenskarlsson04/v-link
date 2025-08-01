@@ -15,9 +15,11 @@ class Config:
         self.can_settings = settings.load_settings("can")
         self.interfaces = []
         self.sensors = {}
+        self.live_sensors = {}
 
         self.load_interfaces()
         self.load_sensors()
+        self.load_live_sensors()
 
     def load_interfaces(self):
         for iface in self.can_settings["interfaces"]:
@@ -88,6 +90,38 @@ class Config:
             except Exception as e:
                 self.logger.error(f"Error loading sensor '{key}': {e}")
 
+    def load_live_sensors(self):
+        for key, sensor in self.can_settings.get('live_sensors', {}).items():
+            try:
+                iface = sensor['interface']
+
+                if not sensor.get('enabled', False):
+                    continue
+
+                if iface not in self.live_sensors:
+                    self.live_sensors[iface] = []
+
+                rep_id = int(sensor['rep_id'], 16)
+                data_bytes = sensor.get('data_bytes', [5, 6])
+                scale = sensor.get('scale', '(value)')
+
+                if not isinstance(scale, str) or 'value' not in scale:
+                    raise ValueError(f"Invalid scale format for live sensor {key}")
+
+                entry = {
+                    'type': 'live',
+                    'rep_id': rep_id,
+                    'data_bytes': data_bytes,
+                    'scale': scale,
+                    'is_16bit': sensor.get('is_16bit', False),
+                    'id': sensor['app_id']
+                }
+
+                self.live_sensors[iface].append(entry)
+                self.logger.debug(f"Loaded live sensor '{key}' on {iface}")
+            except Exception as e:
+                self.logger.error(f"Error loading live sensor '{key}': {e}")
+
 class CANThread(threading.Thread):
     def __init__(self, logger):
         super(CANThread, self).__init__()
@@ -135,9 +169,12 @@ class CANThread(threading.Thread):
 
                 # Configure filters: include sensor reply IDs and control reply ID (if controls enabled on this interface)
                 sensors = self.config.sensors.get(channel, [])
+                live_sensors = self.config.live_sensors.get(channel, [])
                 rep_ids = set()
                 for sensor in sensors:
                     rep_ids.add(sensor["rep_id"][0])
+                for sensor in live_sensors:
+                    rep_ids.add(sensor["rep_id"])
 
                 if self.can_control_settings['enabled'] and self.can_control_settings["interface"] == channel:
                     control_rep_id = int(self.can_control_settings['rep_id'], 16)
@@ -165,6 +202,9 @@ class CANThread(threading.Thread):
                 sensors_by_id = {}
                 for sensor in sensors:
                     rep_id = sensor["rep_id"][0]
+                    sensors_by_id.setdefault(rep_id, []).append(sensor)
+                for sensor in live_sensors:
+                    rep_id = sensor["rep_id"]
                     sensors_by_id.setdefault(rep_id, []).append(sensor)
 
                 self.logger.debug("Starting CAN Notifier")
@@ -258,7 +298,7 @@ class CANListener(can.Listener):
                             value = ((data[5] << 8) | data[6] if sensor["is_16bit"] else data[5])
                         else:
                             continue
-                    else:  # broadcast sensor
+                    else:  # broadcast or live sensor
                         bytes_idx = sensor.get('data_bytes', [5, 6])
                         if sensor["is_16bit"] and len(bytes_idx) >= 2:
                             value = (data[bytes_idx[0]] << 8) | data[bytes_idx[1]]
